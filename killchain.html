@@ -1,0 +1,4468 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MILIT ARTILLERY KILLCHAIN SIMULATOR</title>
+  <style>
+    :root{
+      --bg-main: #0b1117;
+      --bg-panel: #0f161d;
+      --bg-panel-alt: #111a22;
+      --border-subtle: rgba(255,255,255,.08);
+      --text-primary: #dbe7f3;
+      --text-secondary: #9fb2c6;
+      --accent: #5aa9ff;
+      --success: #37d67a;
+      --warning: #f7c948;
+      --danger: #ff5d5d;
+      --shadow-panel: 0 10px 30px rgba(0,0,0,.45);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      --bg: var(--bg-main);
+      --panel: var(--bg-panel);
+      --panel2: var(--bg-panel-alt);
+      --line: #2a3a4a;
+      --text: var(--text-primary);
+      --muted: var(--text-secondary);
+      --good: var(--success);
+      --warn: var(--warning);
+      --bad: var(--danger);
+      --enemy: #ff8a4c;
+      --blue: #56a7ff;
+      --shadow: var(--shadow-panel);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:
+        radial-gradient(1100px 640px at 70% 26%, rgba(90,169,255,.10), transparent 55%),
+        radial-gradient(900px 520px at 20% 80%, rgba(255,138,76,.08), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      font-family:var(--sans);
+      height:100vh;
+      overflow:hidden;
+    }
+
+    header{
+      padding:12px 16px;
+      display:grid;
+      grid-template-columns: auto 1fr auto;
+      align-items:center;
+      gap:14px;
+      border-bottom:1px solid var(--border-subtle);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+      min-height:96px;
+    }
+    .logo-top{width:88px;height:88px;
+      border-radius:50%;
+      border:1px solid var(--border-subtle);
+      box-shadow: var(--shadow-panel);
+      background: color-mix(in srgb, var(--bg-panel) 92%, transparent);
+      object-fit:cover;
+    }
+    .header-right{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      justify-self:end;
+    }
+    .title{justify-self:center;}
+    .title h1{
+      margin:0;
+      font-size:30px;
+      letter-spacing:.9px;
+      font-weight:900;
+      text-transform:uppercase;
+      text-align:center;
+      white-space:nowrap;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pill{
+      font-family:var(--mono);
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      background: color-mix(in srgb, var(--bg-panel) 92%, transparent);
+      border:1px solid var(--border-subtle);
+      color:var(--text-secondary);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .pill b{ color:var(--text); font-weight:800 }
+    .top-actions .pill{
+      padding:10px 12px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+    .top-actions .pill span{
+      font-size:10px;
+      letter-spacing:.9px;
+      text-transform:uppercase;
+      color: color-mix(in srgb, var(--text-secondary) 80%, transparent);
+    }
+    .top-actions .pill b{
+      font-size:14px;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns: 1.65fr .95fr;
+      gap:14px;
+      padding:14px;
+      height:calc(100vh - 64px);
+      min-height:0;
+    }
+    .card{
+      background: var(--bg-panel);
+      border:1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-panel);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    .card{
+      backdrop-filter: blur(6px) saturate(1.05);
+      position:relative;
+      isolation:isolate;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0, rgba(255,255,255,.02) 1px, transparent 1px, transparent 3px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.015) 0, rgba(255,255,255,.015) 1px, transparent 1px, transparent 4px);
+      opacity:.22;
+      pointer-events:none;
+      z-index:0;
+    }
+    .card > *{position:relative;z-index:1;}
+    .card .card-h{
+      padding:12px 12px 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .card .card-h .h{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+    }
+    .card .card-h .h h2{
+      margin:0;
+      font-size:13px;
+      letter-spacing:.35px;
+      text-transform:uppercase;
+      color:var(--text);
+    }
+    .card .card-h .h h2,
+    .bar .bar-h b,
+    .chart .ch span,
+    .modal .mh b,
+    .hud .hdr b{
+      text-transform:uppercase;
+      letter-spacing:.9px;
+    }
+    .card .card-h .h span{
+      font-family:var(--mono);
+      font-size:12px;
+      color:var(--muted);
+    }
+    .card .card-b{
+      padding:12px;
+      min-height:0;
+      overflow:auto;
+    }
+
+    .btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button{
+      font-family:var(--mono);
+      font-size:12px;
+      padding:10px 12px;
+      border-radius: 10px;
+      border:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+      color:var(--text);
+      cursor:pointer;
+      transition: transform .05s ease, background .2s ease, border-color .2s ease;
+      user-select:none;
+    }
+    button:hover{ background: color-mix(in srgb, var(--accent) 12%, var(--bg-panel-alt)); border-color: var(--border-subtle); }
+    button:active{ transform: translateY(1px); }
+    button.primary{
+      background: color-mix(in srgb, var(--accent) 28%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent), 0 10px 24px color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+    #btnReset{
+      opacity:.8;
+      background: var(--bg-panel-alt);
+      border-color: var(--border-subtle);
+    }
+    button.subtle{
+      padding:8px 10px;
+      border-radius:10px;
+      background: var(--bg-panel-alt);
+      border-color: var(--border-subtle);
+      font-size:11px;
+    }
+    .badge{
+      appearance:none;
+      font-family:var(--mono);
+      font-size:11px;
+      padding:5px 8px;
+      border-radius:999px;
+      border:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+      color:var(--muted);
+    }
+    .badge.action{ cursor:pointer; }
+    .badge:disabled{ cursor:default; opacity:.7; }
+    .badge.good{ border-color: color-mix(in srgb, var(--success) 35%, transparent); color: var(--success); background: color-mix(in srgb, var(--success) 12%, transparent); }
+    .badge.warn{ border-color: color-mix(in srgb, var(--warning) 35%, transparent); color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+    .badge.bad { border-color: color-mix(in srgb, var(--danger) 35%, transparent); color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+
+    /* Stage */
+    .stage-wrap{position:relative;width:100%;height:100%;min-height:0;}
+    canvas#cv{
+      width:100%;
+      height:100%;
+      display:block;
+      background:
+        radial-gradient(900px 520px at 55% 45%, rgba(255,255,255,.03), rgba(0,0,0,.10)),
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00));
+    }
+    .overlay{position:absolute;left:12px;top:12px;width:calc(100% - 24px);height:calc(100% - 24px);pointer-events:none;}
+
+    /* HUD */
+    .hud{
+      pointer-events:auto;
+      background: color-mix(in srgb, var(--bg-panel) 80%, transparent);
+      border:1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding:10px 10px;
+      box-shadow: var(--shadow-panel);
+      width: 360px;
+      backdrop-filter: blur(4px);
+      position:absolute;
+      left:0;
+      top:0;
+    }
+    .hud.video-active .step,
+    .hud.video-active .time-scale{
+      display:none;
+    }
+    .hud .hdr{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+      cursor:move;
+      pointer-events:auto;
+    }
+    .hud .hdr b{font-family:var(--mono);font-size:12px;letter-spacing:.2px;}
+    .hud .hdr span{font-family:var(--mono);font-size:11px;color:var(--muted);}
+    .step{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      font-family:var(--mono);
+      font-size:11px;
+      color:var(--muted);
+      padding:7px 8px;
+      border-radius:10px;
+      border:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+      margin-bottom:6px;
+      transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .12s ease;
+      position:relative;
+    }
+    .step:last-child{margin-bottom:0}
+    .step b{color:var(--text)}
+    .step.active{
+      background: rgba(90,169,255,.15);
+      border-color: rgba(90,169,255,.32);
+      box-shadow: 0 0 0 1px rgba(90,169,255,.18), 0 10px 22px rgba(0,0,0,.35);
+      color: rgba(219,231,243,.95);
+      transform: translateX(2px);
+    }
+    .step.active b{color: rgba(219,231,243,1)}
+    .step-line{
+      position:absolute;
+      left:8px;
+      right:8px;
+      bottom:4px;
+      height:2px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      pointer-events:none;
+    }
+    .step-line span{
+      display:block;
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(90,169,255,.85), rgba(90,169,255,.25));
+      transition: width .12s linear;
+    }
+
+    .time-scale{
+      margin-top:8px;
+      padding:8px 8px 6px;
+      border-radius:10px;
+      border:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .time-scale .ts-label{
+      font-family:var(--mono);
+      font-size:11px;
+      color:var(--muted);
+      letter-spacing:.2px;
+    }
+    .time-scale .ts-control{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .time-scale input[type="range"]{flex:1;}
+    .time-scale .ts-val{
+      font-family:var(--mono);
+      font-size:11px;
+      color:var(--text);
+      min-width:54px;
+      text-align:right;
+    }
+
+
+    /* Right tabs */
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{
+      font-family:var(--mono);
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+      color:var(--muted);
+      cursor:pointer;
+      user-select:none;
+    }
+    .tab.active{
+      color:var(--text);
+      border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+    }
+    .tabpanes{margin-top:12px}
+    .pane{display:none}
+    .pane.active{display:block}
+    .prob-row{
+      display:grid;
+      grid-template-columns: 1.1fr 1fr 1fr;
+      gap:8px;
+      align-items:end;
+      margin-top:8px;
+    }
+    .prob-row .label{
+      font-family:var(--mono);
+      font-size:11px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .prob-row input[type="number"],
+    .prob-row select{
+      width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      background:var(--bg-panel);
+      border:1px solid var(--border-subtle);
+      color:var(--text);
+      font-family:var(--mono);
+      font-size:12px;
+    }
+    .prob-note{
+      font-size:11px;
+      color:var(--muted);
+      font-family:var(--mono);
+      margin-top:6px;
+    }
+    .ai-box{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .ai-messages{
+      height:220px;
+      overflow:auto;
+      padding:10px;
+      border-radius:12px;
+      border:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+      font-family:var(--mono);
+      font-size:12px;
+      color:var(--text);
+    }
+    .ai-input{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .ai-input textarea{
+      flex:1;
+      min-height:60px;
+      resize:vertical;
+      padding:10px;
+      border-radius:10px;
+      background:var(--bg-panel);
+      border:1px solid var(--border-subtle);
+      color:var(--text);
+      font-family:var(--mono);
+      font-size:12px;
+    }
+    .ai-note{
+      font-size:11px;
+      color:var(--muted);
+      font-family:var(--mono);
+      line-height:1.4;
+    }
+
+    label{
+      font-size:12px;
+      color:var(--muted);
+      display:block;
+      margin-bottom:6px;
+      font-family:var(--mono);
+    }
+    input[type="range"]{width:100%;accent-color: var(--accent);}
+    select{
+      width:100%;
+      padding:10px;
+      border-radius:10px;
+      background:var(--bg-panel);
+      border:1px solid var(--border-subtle);
+      color:var(--text-primary);
+      font-family:var(--mono);
+      font-size:12px;
+    }
+    option{
+      background:var(--bg-panel);
+      color:var(--text-primary);
+    }
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .kv{
+      font-family:var(--mono);
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      margin-top:6px;
+    }
+    .kv b{color:var(--text)}
+    .small{font-size:12px;color:var(--muted);font-family:var(--mono);line-height:1.35;}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+
+    /* Timeline bar */
+    .bar{
+      background: var(--bg-panel);
+      border:1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow:hidden;
+      margin-top:10px;
+    }
+    .bar .bar-h{
+      padding:8px 10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      border-bottom:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+    }
+    .bar .bar-h b{font-family:var(--mono);font-size:12px;color:var(--text);font-weight:800;}
+    .bar .bar-h span{font-family:var(--mono);font-size:12px;color:var(--muted);}
+    .bar .stack{display:flex;height:16px;}
+    .seg{height:100%;position:relative;}
+    .seg::after{content:"";position:absolute;top:0;bottom:0;right:-1px;width:1px;background:rgba(0,0,0,.25);}
+    .legend{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted);padding:8px 10px 10px;}
+    .leg-item{display:flex;align-items:center;gap:6px;}
+    .dot{width:10px;height:10px;border-radius:2px;background:var(--text-primary);border:1px solid var(--border-subtle);}
+
+    /* Modals */
+    .modal-backdrop{
+      position:fixed;inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index: 9999;
+    }
+    .modal-backdrop.show{display:flex;}
+    .modal{
+      width:min(900px, 98vw);
+      background: var(--bg-panel);
+      border:1px solid var(--border-subtle);
+      border-radius: 14px;
+      box-shadow: var(--shadow-panel);
+      overflow:hidden;
+    }
+    .modal .mh{
+      padding:12px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+    }
+    .modal .mh b{font-family:var(--mono);font-size:13px;letter-spacing:.2px;}
+    .modal .mb{
+      padding:12px;
+      max-height: 74vh;
+      overflow:auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .help_wrap{position:relative;display:flex;align-items:center;gap:8px;margin-left:10px;}
+    .help_dropdown{
+      position:fixed;top:0;left:0;min-width:240px;max-width:320px;
+      background: var(--bg-panel);
+      border:1px solid var(--border-subtle);
+      border-radius:12px;
+      box-shadow: var(--shadow-panel);
+      padding:6px;display:none;z-index:10001;pointer-events:auto;
+    }
+    .help_wrap.open .help_dropdown{display:block;}
+    .help_menu-item{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;}
+    .help_menu-item:hover{background:var(--bg-panel-alt);} 
+    .help_menu-item .help_arrow{color:var(--muted);font-size:12px;}
+    .help_submenu{
+      position:absolute;right:100%;top:0;min-width:240px;max-width:320px;
+      background: var(--bg-panel);
+      border:1px solid var(--border-subtle);
+      border-radius:12px;box-shadow: var(--shadow-panel);
+      padding:6px;display:none;z-index:9999;
+    }
+    .help_menu-item:hover > .help_submenu{display:block;}
+    .help_menu-item.open > .help_submenu{display:block;}
+    .help_subitem{display:block;width:100%;text-align:left;background:transparent;border:0;color:var(--text);padding:8px 10px;border-radius:8px;font-family:var(--mono);font-size:12px;cursor:pointer;}
+    .help_subitem:hover{background:var(--bg-panel-alt);}
+    .help_overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10000;}
+    .help_overlay.show{display:flex;}
+    .help_window{
+      width:min(1000px, 92vw);height:min(70vh, 680px);background:var(--bg-panel);
+      border:1px solid var(--border-subtle);border-radius:14px;box-shadow:var(--shadow-panel);
+      display:flex;flex-direction:column;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+      min-width:520px;min-height:360px;
+    }
+    .help_windowHeader{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border-subtle);background:var(--bg-panel-alt);cursor:move;user-select:none;}
+    .help_windowBody{display:grid;grid-template-columns:260px 1fr;gap:10px;padding:12px;height:100%;overflow:hidden;}
+    .help_left{display:flex;flex-direction:column;gap:8px;min-width:0;}
+    .help_right{overflow:auto;border-left:1px solid var(--border-subtle);padding-left:12px;}
+    .help_label{font-family:var(--mono);font-size:11px;color:var(--muted);} 
+    .help_topicList{overflow:auto;border:1px solid var(--border-subtle);border-radius:12px;padding:6px;background:var(--bg-panel-alt);} 
+    .help_topicGroup{margin-bottom:6px;}
+    .help_topicGroupTitle{font-family:var(--mono);font-size:11px;color:var(--muted);padding:6px 8px;}
+    .help_topic{padding:6px 8px;border-radius:8px;color:var(--text);cursor:pointer;font-family:var(--mono);font-size:12px;}
+    .help_topic:hover{background:var(--bg-panel-alt);} 
+    .help_breadcrumb{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:6px;}
+    .help_title{font-family:var(--mono);font-size:16px;color:var(--text);margin-bottom:8px;}
+    .help_summary{background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid color-mix(in srgb, var(--accent) 28%, transparent);padding:10px;border-radius:10px;color:var(--text);font-family:var(--mono);font-size:12px;margin-bottom:10px;}
+    .help_article{font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.55;}
+    .help_article h4{margin:10px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+    .help_article ul{margin:6px 0 10px 16px;padding:0;}
+    .help_related{margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle);font-family:var(--mono);font-size:12px;}    .overall_overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10050;}
+    .overall_overlay.show{display:flex;}
+    .overall_window{width:min(900px,80vw);height:min(600px,75vh);background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:14px;box-shadow:var(--shadow-panel);display:flex;flex-direction:column;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);min-width:520px;min-height:360px;}
+    .overall_windowHeader{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border-subtle);background:var(--bg-panel-alt);cursor:move;user-select:none;}
+    .overall_windowHeader .title{font-family:var(--mono);font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--text);}
+    .overall_windowBody{padding:12px;overflow:auto;display:flex;flex-direction:column;gap:12px;}
+    .overall_sectionTitle{font-family:var(--mono);font-size:11px;letter-spacing:.6px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+    .ai-badge{display:inline-flex;align-items:center;margin-left:8px;padding:2px 8px;border-radius:999px;font-family:var(--mono);font-size:10px;border:1px solid rgba(90,169,255,.35);color:rgba(90,169,255,.95);background:rgba(90,169,255,.10);}
+    .ai-insight-line{margin-top:8px;padding:6px 8px;border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);}
+    .overall_result{padding:14px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-panel-alt);}
+    .overall_result .big{font-size:28px;font-weight:800;color:var(--text);}
+    .overall_result .sub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:6px;}
+    .overall_bar{height:12px;border-radius:999px;background:var(--bg-panel-alt);overflow:hidden;margin-top:10px;}
+    .overall_bar > span{display:block;height:100%;background:var(--accent);}
+    .overall_status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-family:var(--mono);font-size:11px;border:1px solid var(--border-subtle);margin-left:8px;}
+    .overall_status.low{background:color-mix(in srgb, var(--danger) 15%, transparent);border-color:color-mix(in srgb, var(--danger) 35%, transparent);color:var(--danger);} 
+    .overall_status.med{background:color-mix(in srgb, var(--warning) 15%, transparent);border-color:color-mix(in srgb, var(--warning) 35%, transparent);color:var(--warning);} 
+    .overall_status.high{background:color-mix(in srgb, var(--success) 15%, transparent);border-color:color-mix(in srgb, var(--success) 35%, transparent);color:var(--success);} 
+    .overall_kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;}
+    .overall_card{background:var(--bg-panel-alt);border:1px solid var(--border-subtle);border-radius:12px;padding:10px;}
+    .overall_card .label{font-family:var(--mono);font-size:11px;color:var(--muted);}
+    .overall_card .value{font-size:15px;font-weight:700;color:var(--text);margin-top:4px;}
+    .overall_ribbon{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--text);} 
+    .overall_sep{display:inline-block;opacity:.45;margin:0 8px;font-weight:600;user-select:none;}
+    .overall_statementLine{background:var(--bg-panel-alt);border:1px solid var(--border-subtle);border-radius:10px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text);} 
+    .overall_whatifSummary{display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+    .overall_whatifChartWrap{height:170px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-panel-alt);padding:8px;}
+    .overall_whatifChart{width:100%;height:100%;display:block;}
+    .overall_whatifMeta{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:8px;}
+    .overall_whatifMeta b{color:var(--text);}
+    .overall_deltaBadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-family:var(--mono);font-size:11px;border:1px solid color-mix(in srgb, var(--success) 40%, transparent);color:var(--success);background:color-mix(in srgb, var(--success) 15%, transparent);} 
+    .overall_barList{display:flex;flex-direction:column;gap:6px;}
+    .overall_barRow{display:grid;grid-template-columns:200px 1fr 60px;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;}
+    .overall_barTrack{height:12px;border-radius:999px;background:var(--bg-panel-alt);overflow:hidden;}
+    .overall_barTrack > span{display:block;height:100%;background:var(--accent);} 
+    .overall_stage{display:flex;align-items:center;gap:6px;}
+    .overall_dot{width:10px;height:10px;border-radius:50%;background:var(--success);}
+    .overall_dot.red{background:var(--danger);box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent);} 
+    .overall_dot.amber{background:var(--warning);} 
+    .overall_panel{background:var(--bg-panel-alt);border:1px solid var(--border-subtle);border-radius:12px;padding:10px;}
+    .overall_recos{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:12px;color:var(--text);} 
+    .overall_path{display:flex;flex-direction:column;gap:6px;}
+    .overall_pathRow{display:grid;grid-template-columns:120px 1fr 60px;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;}
+    .overall_pathBar{height:14px;border-radius:999px;background:var(--bg-panel-alt);overflow:hidden;}
+    .overall_pathBar > span{display:block;height:100%;background:var(--accent);} 
+    .overall_actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+    .overall_toggleRow{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:12px;color:var(--text);} 
+    .overall_resizeHandle{position:absolute;width:14px;height:14px;right:4px;bottom:4px;cursor:se-resize;background:linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,0));border-radius:3px;}
+    .help_related a{color:var(--accent);text-decoration:none;margin-right:10px;}
+    .help_resizeHandle{position:absolute;width:14px;height:14px;right:4px;bottom:4px;cursor:se-resize;background:linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,0));border-radius:3px;}
+    @media (max-width: 900px){
+      .help_window{width:94vw;height:76vh;min-width:320px;}
+      .help_windowBody{grid-template-columns:1fr;}
+      .help_right{border-left:0;border-top:1px solid var(--border-subtle);padding-left:0;padding-top:10px;}
+      .help_submenu{position:static;left:auto;top:auto;margin-top:6px;}
+    }
+    .mono-box{
+      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding:10px;
+      margin:10px 0;
+      color: rgba(219,231,243,.92);
+      white-space: pre-wrap;
+    }
+
+    /* Monte Carlo charts */
+    .mc-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px;}
+    .chart{
+      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      overflow:hidden;
+    }
+    .chart .ch{
+      padding:8px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      background: rgba(0,0,0,.12);
+      font-family:var(--mono);font-size:12px;color:var(--muted);
+    }
+    .chart canvas{width:100%;height:220px;display:block;}
+    .progress{
+      height:10px;
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .progress > div{
+      height:100%;
+      width:0%;
+      background: rgba(90,169,255,.35);
+      border-right:1px solid rgba(90,169,255,.45);
+      transition: width .12s linear;
+    }
+
+    @media (max-width: 980px){
+      body{ overflow:auto; }
+      .layout{grid-template-columns:1fr;height:auto;}
+      .card{min-height: 360px;}
+      .hud{width: 340px;}
+      header{grid-template-columns: auto 1fr;}
+      .header-right{justify-content:flex-end;}
+      .title h1{font-size:30px;}
+      .logo-top{width:72px;height:72px;}
+    }
+    .tstgt-panel{
+      pointer-events:auto;
+      position:absolute;
+      inset:0;
+      background: rgba(8,12,16,.56);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      padding:10px 10px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.35);
+      backdrop-filter: blur(4px);
+      display:none;
+      flex-direction:column;
+      gap:6px;
+      z-index:6;
+    }
+    .tstgt-panel.show{display:flex;}
+    .tstgt-panel video{
+      width:259%%;
+      height:1500%;
+      border-radius:19px;
+      border:1px solid rgba(255,255,255,.10);
+      background:#0b1117;
+      margin-top:6px;
+    }
+  </style>
+  <style>
+    /* TS TGT full-panel video override */
+    .tstgt-panel{
+      padding:0;
+      width:100%;
+      height:100%;
+    }
+    .tstgt-panel .hdr,
+    .tstgt-panel .step{
+      display:none;
+    }
+    .tstgt-panel video{
+      position:absolute;
+      inset:0;
+      width:259%;
+      height:1500%;
+      border-radius:12px;
+      margin:0;
+      object-fit:cover;
+    }
+
+    /* Title case for control-related headings */
+    .card .card-h .h h2,
+    .bar .bar-h b,
+    .chart .ch span,
+    .modal .mh b,
+    .hud .hdr b,
+    .tab{
+      text-transform:none;
+      letter-spacing:.3px;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <img class="logo-top" alt="MILIT logo" src="MILITlogo.jpg" />
+
+  <div class="title">
+    <h1>MILIT ARTILLERY KILLCHAIN SIMULATOR</h1>
+  </div>
+
+  <div class="header-right">
+    <div class="top-actions">
+      <div class="pill"><span>Mode</span><b id="modePill">Drone-Assisted</b></div>
+      <div class="pill"><span>TSS</span><b id="tssPill"> ?"</b></div>
+      <div class="pill"><span>FRE</span><b id="frePill"> ?"</b></div>
+      <div class="pill"><span>Survive</span><b id="survPill"> ?"</b></div>
+      <div class="pill" style="gap:10px;">
+        <span>Audio</span>
+        <b id="audioPill">ON</b>
+        <button id="btnMute" class="subtle" type="button" style="pointer-events:auto;">Mute</button>
+      </div>
+    </div>
+    <img class="logo-top" alt="MILIT logo" src="MILITlogo.jpg" />
+  </div>
+</header>
+
+<main class="layout">
+  <!-- Left: Stage -->
+  <section class="card">
+    <div class="card-h">
+      <div class="h">
+        <h2>Operational View</h2>
+      </div>
+      <button class="badge" id="statusBadgeBtn" type="button" disabled>READY</button>
+    </div>
+
+    <div class="card-b stage-wrap">
+      <canvas id="cv"></canvas>
+
+      <div class="overlay">
+        <div class="hud" id="hud">
+          <div class="hdr">
+            <b>FIRE MISSION HUD</b>
+            <span id="hudClock">T+00.0s</span>
+          </div>
+
+          <div class="step" id="stepDetect">
+            <span>DETECTION</span><b id="hudDetect">STANDBY</b>
+            <div class="step-line"><span id="progDetect"></span></div>
+          </div>
+          <div class="step" id="stepPID">
+            <span>PID / CONFIRM</span><b id="hudPID">STANDBY</b>
+            <div class="step-line"><span id="progPID"></span></div>
+          </div>
+          <div class="step" id="stepC2">
+            <span>C2 / ROUTE</span><b id="hudC2">STANDBY</b>
+            <div class="step-line"><span id="progC2"></span></div>
+          </div>
+          <div class="step" id="stepFire">
+            <span>WEAPON ACTION</span><b id="hudFire">STANDBY</b>
+            <div class="step-line"><span id="progFire"></span></div>
+          </div>
+          <div class="step" id="stepBDA">
+            <span>BDA / EFFECT</span><b id="hudBDA">STANDBY</b>
+            <div class="step-line"><span id="progBDA"></span></div>
+          </div>
+
+          <div class="time-scale">
+            <div class="ts-label">TIME SCALE</div>
+            <div class="ts-control">
+              <input id="timeScale" type="range" min="0.25" max="10" step="0.25" value="1" />
+              <span class="ts-val" id="timeScaleVal">x1.00</span>
+            </div>
+          </div>
+          <div class="tstgt-panel" id="tstgtPanel" aria-hidden="true">
+            <div class="hdr">
+              <b>TS TGT FEED</b>
+              <span>2.5x</span>
+            </div>
+            <div class="step"><span>DETECTION</span><b>LIVE</b></div>
+            <div class="step"><span>PID / CONFIRM</span><b>LIVE</b></div>
+            <div class="step"><span>C2 / ROUTE</span><b>LIVE</b></div>
+            <div class="step"><span>WEAPON ACTION</span><b>LIVE</b></div>
+            <div class="step"><span>BDA / EFFECT</span><b>LIVE</b></div>
+            <video id="tstgtVideo" playsinline preload="metadata">
+              <source src="TStgt.mp4" type="video/mp4" />
+            </video>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Right: Controls -->
+  <aside class="card">
+    <div class="card-h">
+      <div class="h">
+        <h2>Controls</h2>
+      </div>
+      <div class="btns">
+        <div class="help_wrap" id="help_wrap">
+          <button id="help_btn" type="button" aria-haspopup="true" aria-expanded="false">Help</button>
+          <div id="help_dropdown" class="help_dropdown" role="menu" aria-hidden="true"></div>
+        </div>
+        <button id="overall_btnOpen" type="button">AI Assessment</button>
+        <button id="btnTSTgt">TS Tgt</button>
+        <button id="btnReset">Reset</button>
+        <button id="btnRun" class="primary">Run Mission</button>
+      </div>
+    </div>
+
+    <div class="card-b">
+      <div class="tabs" role="tablist">
+        <div class="tab active" data-tab="params">Parameters</div>
+        <div class="tab" data-tab="metrics">Metrics</div>
+        <div class="tab" data-tab="mc">Monte Carlo</div>
+        <div class="tab" data-tab="prob">Prob Closure</div>
+        <div class="tab" data-tab="ai">AI Analysis</div>
+      </div>
+
+      <div class="tabpanes">
+        <!-- PARAMETERS -->
+        <div class="pane active" id="pane-params">
+          <div class="grid2">
+            <div>
+              <label for="mode">Kill-Chain Mode</label>
+              <select id="mode">
+                <option value="conventional">Conventional</option>
+                <option value="drone" selected>Drone-Assisted</option>
+                <option value="fpv">FPV / Loitering Strike</option>
+              </select>
+              <div class="small" style="margin-top:8px">
+                FPV/Loitering mode renders the shooter as a loitering munition (instead of a gun).
+              </div>
+            </div>
+
+            <div>
+              <label for="ew">EW / Jamming (0–10)</label>
+              <input id="ew" type="range" min="0" max="10" value="2" />
+              <div class="kv"><span>Link degradation</span><b id="ewVal">2</b></div>
+
+              <label for="human" style="margin-top:12px;">Human Factor (0–10)</label>
+              <input id="human" type="range" min="0" max="10" value="3" />
+              <div class="kv"><span>Manual uncertainty</span><b id="humanVal">3</b></div>
+            </div>
+
+            <div>
+              <label for="det">Detection Latency (sec)</label>
+              <input id="det" type="range" min="10" max="480" value="90" />
+              <div class="kv"><span>T_detect</span><b id="detVal">90</b></div>
+
+              <label for="pid" style="margin-top:12px;">PID / Confirmation (sec)</label>
+              <input id="pid" type="range" min="5" max="240" value="25" />
+              <div class="kv"><span>T_PID</span><b id="pidVal">25</b></div>
+            </div>
+
+            <div>
+              <label for="c2">C2 Routing / Decision (sec)</label>
+              <input id="c2" type="range" min="10" max="600" value="60" />
+              <div class="kv"><span>T_C2</span><b id="c2Val">60</b></div>
+
+              <label for="fire" style="margin-top:12px;">Weapon Action (sec)</label>
+              <input id="fire" type="range" min="10" max="300" value="45" />
+              <div class="kv"><span>T_fire</span><b id="fireVal">45</b></div>
+            </div>
+
+            <div>
+              <label for="bda">Correction / BDA (sec)</label>
+              <input id="bda" type="range" min="5" max="360" value="25" />
+              <div class="kv"><span>T_BDA</span><b id="bdaVal">25</b></div>
+            </div>
+
+            <div>
+              <label for="elev">3D Elevation Intensity (0–10)</label>
+              <input id="elev" type="range" min="0" max="10" value="7" />
+              <div class="kv"><span>Relief shading</span><b id="elevVal">7</b></div>
+          </div>
+        </div>
+
+        <div class="bar" style="margin-top:12px;">
+          <div class="bar-h">
+            <b>Kill-chain timeline</b>
+            <span id="barTotalParams">—</span>
+          </div>
+          <div class="stack" id="stackParams"></div>
+          <div class="legend" id="legendParams"></div>
+        </div>
+      </div>
+
+      <!-- METRICS -->
+        <div class="pane" id="pane-metrics">
+          <div class="row">
+            <div class="small">Computed outcomes</div>
+            <span class="badge" id="interpretBadge">—</span>
+          </div>
+
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+            <div class="pill" style="justify-content:space-between;">
+              <span>Kill-chain (TSS)</span><b id="tssOut">—</b>
+            </div>
+
+            <div class="pill" style="justify-content:space-between;gap:10px;">
+              <span>First-round effect (FRE)</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <b id="freOut">—</b>
+                <button class="subtle" id="btnExplainFRE" type="button">Explain</button>
+              </div>
+            </div>
+
+            <div class="pill" style="justify-content:space-between;gap:10px;">
+              <span>Survivability</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <b id="survOut">—</b>
+                <button class="subtle" id="btnExplainSurv" type="button">Explain</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bar">
+            <div class="bar-h">
+              <b>Kill-chain timeline</b>
+              <span id="barTotal">—</span>
+            </div>
+            <div class="stack" id="stack"></div>
+            <div class="legend" id="legend"></div>
+          </div>
+        </div>
+
+        <!-- MONTE CARLO -->
+        <div class="pane" id="pane-mc">
+          <div class="row">
+            <div class="small">Monte Carlo: distributions of TSS, FRE and outcomes</div>
+            <span class="badge" id="mcBadge">IDLE</span>
+          </div>
+
+          <div style="margin-top:10px" class="grid2">
+            <div>
+              <label for="trials">Trials (500–20000)</label>
+              <input id="trials" type="range" min="500" max="20000" step="500" value="5000" />
+              <div class="kv"><span>N</span><b id="trialsVal">5000</b></div>
+            </div>
+            <div>
+              <label for="sigma">Uncertainty Level (σ multiplier)</label>
+              <input id="sigma" type="range" min="5" max="35" value="18" />
+              <div class="kv"><span>Stage variance</span><b id="sigmaVal">18%</b></div>
+            </div>
+          </div>
+
+          <div class="btns" style="margin-top:10px">
+            <button id="btnRunMC" class="primary" type="button">Run Monte Carlo</button>
+            <button id="btnClearMC" type="button">Clear</button>
+          </div>
+
+          <div style="margin-top:10px">
+            <div class="progress"><div id="mcProg"></div></div>
+            <div class="kv" style="margin-top:6px"><span>Progress</span><b id="mcProgText">0%</b></div>
+          </div>
+
+          <div class="mc-grid">
+            <div class="chart">
+              <div class="ch"><span>TSS Distribution</span><span id="mcTssStats">—</span></div>
+              <canvas id="mcTss"></canvas>
+            </div>
+            <div class="chart">
+              <div class="ch"><span>FRE Distribution</span><span id="mcFreStats">—</span></div>
+              <canvas id="mcFre"></canvas>
+            </div>
+            <div class="chart">
+              <div class="ch"><span>Outcome Rates</span><span id="mcOutStats">—</span></div>
+              <canvas id="mcOut"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- PROB CLOSURE -->
+        <div class="pane" id="pane-prob">
+          <div class="row">
+            <div class="small">Probabilistic kill-chain closure: P(T_KC ≤ T_V)</div>
+          </div>
+          <div class="grid2" style="margin-top:10px;">
+            <div>
+              <label for="probTrials">Trials (1000–20000)</label>
+              <input id="probTrials" type="range" min="1000" max="20000" step="500" value="10000" />
+              <div class="kv"><span>N</span><b id="probTrialsVal">10000</b></div>
+            </div>
+            <div>
+              <label for="probPreset">Scenario Preset</label>
+              <select id="probPreset">
+                <option value="baseline" selected>Baseline</option>
+                <option value="ew">EW Degraded Comms</option>
+                <option value="ai">AI Vision + Faster Decide</option>
+                <option value="fiber">Optical Fibre Link</option>
+                <option value="weather">Bad Weather</option>
+              </select>
+              <div class="btns" style="margin-top:10px;">
+                <button id="probSync" type="button">Sync from current mission sliders</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="small">Step distributions</div>
+            <div id="probStepControls"></div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="small">Target Vulnerability Window (T_V)</div>
+            <div id="probVulnControls"></div>
+          </div>
+
+          <div class="btns" style="margin-top:10px;">
+            <button id="btnRunProb" class="primary" type="button">Run Probabilistic Model</button>
+            <button id="btnRunSens" type="button">Run Sensitivity</button>
+          </div>
+
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+            <div class="pill" style="justify-content:space-between;">
+              <span>P(close before relocation)</span><b id="probPSuccess">—</b>
+            </div>
+            <div class="pill" style="justify-content:space-between;">
+              <span>Stats</span><b id="probMeta">—</b>
+            </div>
+          </div>
+
+          <div class="mc-grid" style="margin-top:10px;">
+            <div class="chart">
+              <div class="ch"><span>T_KC Distribution</span></div>
+              <canvas id="probHist"></canvas>
+            </div>
+            <div class="chart">
+              <div class="ch"><span>CDF: T_KC vs T_V</span></div>
+              <canvas id="probCdf"></canvas>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="small">AI Confidence (sorted by impact)</div>
+            <div id="probSensTable" class="mono-box" style="margin-top:6px;">—</div>
+          </div>
+        </div>
+        <!-- AI ANALYSIS -->
+        <div class="pane" id="pane-ai">
+          <div class="ai-box">
+    <div class="ai-note">Client-side Gemini key required. This exposes your key in the browser.</div>
+            <div class="ai-messages" id="aiMessages">Ready.</div>
+            <div class="ai-input">
+              <textarea id="aiPrompt" placeholder="Ask for analysis of the current kill-chain setup..."></textarea>
+              <button id="btnAiSend" class="primary" type="button">Send</button>
+            </div>
+            <div class="ai-note">Tip: Keep prompts short. Responses are not stored.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- Modal: Explain -->
+<div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mh">
+      <b id="modalTitle">Explain</b>
+      <button id="btnCloseModal" class="subtle" type="button" style="pointer-events:auto;">Close</button>
+    </div>
+    <div class="mb" id="modalBody"></div>
+  </div>
+</div>
+
+
+<!-- Help Book -->
+<div class="help_overlay" id="help_overlay" aria-hidden="true">
+  <div class="help_window" id="help_window" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="help_windowHeader" id="help_windowHeader">
+      <b>Help Book</b>
+      <button id="help_closeBtn" class="subtle" type="button" aria-label="Close">X</button>
+    </div>
+    <div class="help_windowBody" id="help_windowBody">
+      <div class="help_left">
+        <label class="help_label" for="help_search">Search topics</label>
+        <input id="help_search" type="text" placeholder="Search..." aria-label="Search help topics" />
+        <div id="help_topicList" class="help_topicList"></div>
+      </div>
+      <div class="help_right">
+        <div id="help_breadcrumb" class="help_breadcrumb"></div>
+        <div class="help_title" id="help_title"></div>
+        <div class="help_summary" id="help_summary"></div>
+        <div class="help_article" id="help_article"></div>
+        <div class="help_related" id="help_related"></div>
+      </div>
+    </div>
+    <div id="help_resizeHandle" class="help_resizeHandle" aria-hidden="true"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp = (a,b,t)=>a+(b-a)*t;
+  const GEMINI_MODEL = "gemini-2.5-flash";
+
+  // Client-side key (unsafe). Replace with your key if you insist on this mode.
+  const GEMINI_API_KEY = "AIzaSyDrRlPRnlyagu5oODtcqML3Y4hvGpa8uec";
+
+  // ===== Audio (procedural SFX) =====
+  let audioCtx = null;
+  let audioOn = true;
+  let droneNode = null;
+  const sfx = {
+    quad: new Audio("quadcopter.wav"),
+    fired: new Audio("shellfired.wav"),
+    strike: new Audio("shellstrike.wav"),
+    confirm: new Audio("confirm.wav"),
+    c2: new Audio("c2.wav")
+  };
+  sfx.quad.loop = true;
+  sfx.quad.volume = 0.7;
+  sfx.fired.volume = 0.8;
+  sfx.strike.volume = 0.85;
+
+  function playLoop(a){
+    if(!audioOn || !a) return;
+    if(a.paused){
+      a.play().catch(()=>{});
+    }
+  }
+  function stopLoop(a){
+    if(!a) return;
+    a.pause();
+    a.currentTime = 0;
+  }
+  function playOnce(a){
+    if(!audioOn || !a) return;
+    a.currentTime = 0;
+    a.play().catch(()=>{});
+  }
+  function stopAllSfx(){
+    stopLoop(sfx.quad);
+    sfx.fired.pause();
+    sfx.strike.pause();
+  }
+
+  function ensureAudio(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+
+  function stopDroneBuzz(){
+    if(droneNode){
+      try{
+        droneNode.gain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.03);
+        setTimeout(()=>{ try{droneNode.osc.stop();}catch(e){} }, 120);
+      }catch(e){}
+      droneNode = null;
+    }
+  }
+
+  function startDroneBuzz(type="isr"){
+    if(!audioOn) return;
+    ensureAudio();
+    stopDroneBuzz();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = (type==="loiter") ? 420 : 520;
+
+    osc.type = "sawtooth";
+    osc.frequency.value = (type==="loiter") ? 120 : 140;
+
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.type = "sine";
+    lfo.frequency.value = 2.2;
+    lfoGain.gain.value = (type==="loiter") ? 14 : 10;
+    lfo.connect(lfoGain).connect(osc.detune);
+
+    gain.gain.value = 0.0001;
+    osc.connect(lp).connect(gain).connect(audioCtx.destination);
+
+    osc.start();
+    lfo.start();
+    gain.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.06);
+
+    droneNode = {osc, gain, lfo, lfoGain, lp};
+  }
+
+  function artilleryBoom(){
+    if(!audioOn) return;
+    ensureAudio();
+    const now = audioCtx.currentTime;
+
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.06));
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = "lowpass";
+    noiseFilter.frequency.setValueAtTime(950, now);
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.35, now + 0.01);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+
+    noise.connect(noiseFilter).connect(noiseGain).connect(audioCtx.destination);
+    noise.start(now);
+    noise.stop(now + 0.5);
+
+    const th = audioCtx.createOscillator();
+    th.type = "sine";
+    th.frequency.setValueAtTime(60, now);
+    const thGain = audioCtx.createGain();
+    thGain.gain.setValueAtTime(0.0001, now);
+    thGain.gain.exponentialRampToValueAtTime(0.45, now + 0.02);
+    thGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+    th.connect(thGain).connect(audioCtx.destination);
+    th.start(now);
+    th.stop(now + 0.4);
+  }
+
+  function impactBoom(){
+    if(!audioOn) return;
+    ensureAudio();
+    const now = audioCtx.currentTime;
+
+    const osc = audioCtx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(55, now + 0.22);
+
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.26, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.36);
+  }
+
+  $("btnMute").addEventListener("click", async ()=>{
+    audioOn = !audioOn;
+    $("audioPill").textContent = audioOn ? "ON" : "OFF";
+    $("btnMute").textContent = audioOn ? "Mute" : "Unmute";
+    if(audioOn){
+      ensureAudio();
+      if(audioCtx.state === "suspended") await audioCtx.resume();
+      const m = $("mode").value;
+      startDroneBuzz(m==="fpv" ? "loiter" : "isr");
+    } else {
+      if(audioCtx){
+        stopDroneBuzz();
+      }
+      stopAllSfx();
+    }
+  });
+
+  // ===== Canvas setup =====
+  const cv = $("cv");
+  const ctx = cv.getContext("2d");
+  let W=0,H=0,DPR=1;
+
+  // cached terrain
+  let terrain = null;
+
+  function resize(){
+    // Guard: canvas might briefly be 0x0 during first layout
+    const r = cv.getBoundingClientRect();
+    if(!r.width || !r.height) return;
+
+    DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    W = Math.floor(r.width * DPR);
+    H = Math.floor(r.height * DPR);
+    if(W < 20 || H < 20) return;
+
+    cv.width=W; cv.height=H;
+    terrain = null; // regenerate on size change
+    draw();
+    applyHudOffset(hudOffset.x, hudOffset.y);
+  }
+  window.addEventListener("resize", () => requestAnimationFrame(resize));
+
+  function pxX(nx){return nx*W}
+  function pxY(ny){return ny*H}
+
+  // ===== State / Animation =====
+  const state = {
+    running:false,
+    t:0,
+    impact:false,
+    shotLine:false,
+
+    proj:null,
+    particles:[],
+    droneMove:null,
+    loiterStrike:false,
+    loiterDone:false,
+    lastOutcome:null,
+
+    drone:{x:.50,y:.15},
+    gun:{x:.20,y:.75},
+    c2:{x:.50,y:.65},
+    tgt:{x:.86,y:.80},
+  };
+
+  let timeScale = 1;
+  let activeStep = -1;
+
+  // ===== Terrain (pseudo 3D elevation) =====
+  function hash(x,y){
+    let n = x*374761393 + y*668265263; n = (n ^ (n >> 13)) * 1274126177;
+    return ((n ^ (n >> 16)) >>> 0) / 4294967295;
+  }
+  function smoothstep(t){ return t*t*(3-2*t); }
+  function valueNoise(x,y){
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const xf = x - xi, yf = y - yi;
+    const v00 = hash(xi, yi);
+    const v10 = hash(xi+1, yi);
+    const v01 = hash(xi, yi+1);
+    const v11 = hash(xi+1, yi+1);
+    const u = smoothstep(xf);
+    const v = smoothstep(yf);
+    const a = v00*(1-u) + v10*u;
+    const b = v01*(1-u) + v11*u;
+    return a*(1-v) + b*v;
+  }
+  function fbm(x,y){
+    let f=0, amp=0.55, freq=0.8;
+    for(let i=0;i<4;i++){
+      f += amp * valueNoise(x*freq, y*freq);
+      freq *= 2.05;
+      amp *= 0.5;
+    }
+    return f;
+  }
+
+  function buildTerrain(){
+    // IMPORTANT GUARD: if canvas not ready -> do nothing
+    if(!W || !H || W < 20 || H < 20) return;
+
+    const scale = 3;
+    const tw = Math.max(2, Math.floor(W/(12*scale)));
+    const th = Math.max(2, Math.floor(H/(12*scale)));
+
+    const heights = new Float32Array(tw*th);
+
+    for(let j=0;j<th;j++){
+      for(let i=0;i<tw;i++){
+        const nx = i/tw * 10;
+        const ny = j/th * 10;
+        let h = fbm(nx, ny);
+        const cx = (i/tw - 0.55);
+        const cy = (j/th - 0.48);
+        const ridge = Math.exp(-(cx*cx*10 + cy*cy*3));
+        h = h*0.8 + ridge*0.25;
+        heights[j*tw+i] = h;
+      }
+    }
+
+    const elev = +$("elev").value / 10;
+    const img = ctx.createImageData(tw, th);
+    const data = img.data;
+
+    const lx= -0.6, ly= -0.8, lz= 0.9;
+    for(let j=0;j<th;j++){
+      for(let i=0;i<tw;i++){
+        const idx = j*tw+i;
+        const hC = heights[idx];
+        const hR = heights[j*tw + Math.min(tw-1, i+1)];
+        const hL = heights[j*tw + Math.max(0, i-1)];
+        const hD = heights[Math.min(th-1, j+1)*tw + i];
+        const hU = heights[Math.max(0, j-1)*tw + i];
+
+        const dx = (hR - hL);
+        const dy = (hD - hU);
+
+        let nx = -dx * 2.0;
+        let ny = -dy * 2.0;
+        let nz = 1.4;
+        const inv = 1/Math.sqrt(nx*nx+ny*ny+nz*nz);
+        nx*=inv; ny*=inv; nz*=inv;
+
+        const shade = clamp((nx*lx + ny*ly + nz*lz)*0.5 + 0.55, 0, 1);
+        const hNorm = clamp((hC - 0.15)/0.9, 0, 1);
+
+        const baseR = 18 + hNorm*22;
+        const baseG = 28 + hNorm*30;
+        const baseB = 30 + hNorm*22;
+
+        const s = lerp(1, shade, 0.85*elev);
+        const r = clamp(baseR * s, 0, 255);
+        const g = clamp(baseG * s, 0, 255);
+        const b = clamp(baseB * s, 0, 255);
+
+        const p = idx*4;
+        data[p]   = r;
+        data[p+1] = g;
+        data[p+2] = b;
+        data[p+3] = 255;
+      }
+    }
+
+    terrain = {tw, th, img, heights};
+  }
+
+  function drawTerrain3D(){
+    if(!terrain){
+      buildTerrain();
+      if(!terrain) return; // still not ready
+    }
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.globalAlpha = 0.95;
+
+    const off = document.createElement("canvas");
+    off.width = terrain.tw;
+    off.height = terrain.th;
+    const octx = off.getContext("2d");
+    octx.putImageData(terrain.img, 0, 0);
+    ctx.drawImage(off, 0, 0, W, H);
+
+    // Digital baseline grid
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = "rgba(120,200,255,.25)";
+    ctx.lineWidth = 1*DPR;
+    const gridStep = 36*DPR;
+    for(let x=0;x<=W;x+=gridStep){
+      ctx.beginPath();
+      ctx.moveTo(x,0);
+      ctx.lineTo(x,H);
+      ctx.stroke();
+    }
+    for(let y=0;y<=H;y+=gridStep){
+      ctx.beginPath();
+      ctx.moveTo(0,y);
+      ctx.lineTo(W,y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = "rgba(255,255,255,.10)";
+    ctx.lineWidth = 1*DPR;
+    const step = 60*DPR;
+    for(let y=0;y<=H;y+=step){
+      ctx.beginPath();
+      ctx.moveTo(0,y);
+      ctx.bezierCurveTo(W*0.25,y-12*DPR,W*0.65,y+10*DPR,W,y-8*DPR);
+      ctx.stroke();
+    }
+
+    const grd = ctx.createRadialGradient(W*0.55,H*0.50,Math.min(W,H)*0.20, W*0.55,H*0.50, Math.min(W,H)*0.80);
+    grd.addColorStop(0,"rgba(0,0,0,0)");
+    grd.addColorStop(1,"rgba(0,0,0,0.35)");
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,W,H);
+    ctx.restore();
+  }
+
+  function drawGrid(){
+    if(!W || !H) return;
+    ctx.save();
+    ctx.globalAlpha=0.14;
+    ctx.strokeStyle="rgba(255,255,255,.10)";
+    ctx.lineWidth=1*DPR;
+    const step=72*DPR;
+    for(let x=0;x<=W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<=H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    ctx.globalAlpha=0.18;
+    ctx.strokeStyle="rgba(90,169,255,.35)";
+    ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+    ctx.restore();
+  }
+
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);
+    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);
+    ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  function drawIcon(x,y, kind, label, color){
+    const r=14*DPR;
+    ctx.save();
+    ctx.translate(x,y);
+
+    ctx.globalAlpha=0.55;
+    ctx.fillStyle="rgba(0,0,0,.40)";
+    ctx.beginPath();
+    ctx.ellipse(0,r*1.25,r*1.2,r*0.6,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+
+    ctx.strokeStyle=color;
+    ctx.lineWidth=2*DPR;
+
+    if(kind==="drone"){
+      ctx.beginPath(); ctx.arc(0,0,r*0.65,0,Math.PI*2); ctx.stroke();
+      const arm=r*1.2;
+      ctx.beginPath();
+      ctx.moveTo(-arm,0);ctx.lineTo(arm,0);
+      ctx.moveTo(0,-arm);ctx.lineTo(0,arm);
+      ctx.stroke();
+      const pr=r*0.35;
+      [[-arm,-arm],[arm,-arm],[-arm,arm],[arm,arm]].forEach(([dx,dy])=>{
+        ctx.beginPath(); ctx.arc(dx,dy,pr,0,Math.PI*2); ctx.stroke();
+      });
+    } else if(kind==="gun"){
+      ctx.beginPath();
+      roundRect(ctx, -r*1.2,-r*0.5,r*2.2,r*1.0,6*DPR);
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,0);ctx.lineTo(r*2.3,-r*0.85); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.9,r*0.6);ctx.lineTo(r*0.9,r*0.6); ctx.stroke();
+        } else if(kind==="cam"){
+      roundRect(ctx, -r*1.1,-r*0.7,r*2.2,r*1.4,6*DPR);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,r*0.45,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.9,-r*0.9);ctx.lineTo(-r*0.2,-r*0.9); ctx.stroke();    } else if(kind==="c2"){
+      ctx.beginPath(); ctx.rect(-r,-r,r*2,r*2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r,0);ctx.lineTo(r,0);
+      ctx.moveTo(0,-r);ctx.lineTo(0,r);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,r*0.45,0,Math.PI*2); ctx.stroke();
+    } else if(kind==="tgt"){
+      ctx.beginPath(); ctx.arc(0,0,r*1.1,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,r*0.55,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-r*1.2,0);ctx.lineTo(r*1.2,0);
+      ctx.moveTo(0,-r*1.2);ctx.lineTo(0,r*1.2);
+      ctx.stroke();
+    }
+
+    ctx.font = `${12*DPR}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.fillStyle="rgba(219,231,243,.92)";
+    ctx.textAlign="center";
+    ctx.textBaseline="top";
+    ctx.fillText(label,0,r*1.45);
+    ctx.restore();
+  }
+
+  function drawCone(){
+    const m = $("mode").value;
+    if(state.loiterStrike || (m==="fpv" && (activeStep>=3 || state.loiterDone))) return;
+    const dx = pxX(state.tgt.x)-pxX(state.drone.x);
+    const dy = pxY(state.tgt.y)-pxY(state.drone.y);
+    const baseAng = Math.atan2(dy,dx);
+    const coneDeg = (m==="fpv") ? 30 : 52;
+    const cone = coneDeg*Math.PI/180;
+    const dist = Math.hypot(dx, dy);
+    const len = Math.max(dist + 40*DPR, Math.min(W,H) * (m==="fpv" ? 0.36 : 0.42));
+    const locked = state.running && activeStep >= 1;
+    const sweep = locked ? 0 : (Math.sin(state.t*1.4) * ((m==="fpv") ? 0.22 : 0.32));
+    const ang = baseAng + sweep;
+
+    ctx.save();
+    ctx.translate(pxX(state.drone.x),pxY(state.drone.y));
+
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,len,ang-cone/2,ang+cone/2);
+    ctx.closePath();
+    ctx.fillStyle = locked ? "rgba(255,93,93,.12)" : "rgba(86,167,255,.07)";
+    ctx.fill();
+
+    ctx.strokeStyle = locked ? "rgba(255,93,93,.55)" : "rgba(86,167,255,.35)";
+    ctx.lineWidth = 2*DPR;
+    ctx.beginPath();
+    ctx.moveTo(0,0); ctx.lineTo(Math.cos(ang-cone/2)*len, Math.sin(ang-cone/2)*len);
+    ctx.moveTo(0,0); ctx.lineTo(Math.cos(ang+cone/2)*len, Math.sin(ang+cone/2)*len);
+    ctx.stroke();
+
+    ctx.strokeStyle = locked ? "rgba(255,93,93,.35)" : "rgba(86,167,255,.22)";
+    ctx.setLineDash([6*DPR,6*DPR]);
+    ctx.beginPath();
+    ctx.moveTo(0,0); ctx.lineTo(Math.cos(ang)*len, Math.sin(ang)*len);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Digital mesh inside cone
+    ctx.save();
+    ctx.strokeStyle = locked ? "rgba(255,93,93,.22)" : "rgba(86,167,255,.18)";
+    ctx.lineWidth = 1*DPR;
+    const rings = 6;
+    for(let i=1;i<=rings;i++){
+      const r = (len/rings)*i;
+      ctx.beginPath();
+      ctx.arc(0,0,r,ang-cone/2,ang+cone/2);
+      ctx.stroke();
+    }
+    const spokes = 5;
+    for(let i=1;i<spokes;i++){
+      const a = ang - cone/2 + (cone/spokes)*i;
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.lineTo(Math.cos(a)*len, Math.sin(a)*len);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawSignalPulse(from, to, phase){
+    const t = (state.t*0.75 + phase) % 1;
+    const x = from.x + (to.x-from.x)*t;
+    const y = from.y + (to.y-from.y)*t;
+    ctx.save();
+    ctx.fillStyle = "rgba(90,169,255,.85)";
+    ctx.shadowColor = "rgba(90,169,255,.65)";
+    ctx.shadowBlur = 12*DPR;
+    ctx.beginPath();
+    ctx.arc(x, y, 3.4*DPR, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLinks(){
+    const d={x:pxX(state.drone.x), y:pxY(state.drone.y)};
+    const c={x:pxX(state.c2.x), y:pxY(state.c2.y)};
+    const g={x:pxX(state.gun.x), y:pxY(state.gun.y)};
+    const t={x:pxX(state.tgt.x), y:pxY(state.tgt.y)};
+    const ew=+$("ew").value;
+    const linkAlpha = clamp(1-ew/12, 0.25, 1);
+
+    ctx.save();
+    ctx.lineWidth=2*DPR;
+    ctx.setLineDash([8*DPR,8*DPR]);
+    ctx.strokeStyle=`rgba(90,169,255,${0.35*linkAlpha})`;
+    const trim = 18*DPR;
+    function dashedTrim(from,to){
+      const vx = to.x - from.x;
+      const vy = to.y - from.y;
+      const dist = Math.max(1, Math.hypot(vx,vy));
+      const ux = vx/dist, uy = vy/dist;
+      const a = {x: from.x + ux*trim, y: from.y + uy*trim};
+      const b = {x: to.x - ux*trim, y: to.y - uy*trim};
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+    if($("mode").value === "fpv"){
+      dashedTrim(c,d);
+    } else {
+      dashedTrim(d,c);
+      dashedTrim(c,g);
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    if(state.running && activeStep === 2){
+      drawSignalPulse(d, c, 0.0);
+      drawSignalPulse(c, g, 0.35);
+    }
+
+    if(state.shotLine){
+      ctx.save();
+      const m = $("mode").value;
+      ctx.strokeStyle = (m==="fpv") ? "rgba(255,138,76,.55)" : "rgba(255,138,76,.35)";
+      ctx.lineWidth = (m==="fpv") ? 3*DPR : 2.3*DPR;
+      ctx.beginPath(); ctx.moveTo(g.x,g.y); ctx.lineTo(t.x,t.y); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawBdaSweep(){
+    if(!state.running || activeStep !== 4) return;
+    const x = pxX(state.tgt.x);
+    const y = pxY(state.tgt.y);
+    const r = 56*DPR;
+    const sweep = (state.t*1.8) % (Math.PI*2);
+
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = "rgba(55,214,122,.6)";
+    ctx.lineWidth = 2*DPR;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.stroke();
+
+    const grad = ctx.createRadialGradient(x,y,0,x,y,r);
+    grad.addColorStop(0,"rgba(55,214,122,.18)");
+    grad.addColorStop(1,"rgba(55,214,122,0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.arc(x,y,r,sweep-0.35,sweep+0.35);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function updateDroneMove(){
+    if(!state.droneMove) return;
+    const move = state.droneMove;
+    const t = clamp((state.t - move.t0) / move.dur, 0, 1);
+    state.drone.x = lerp(move.from.x, move.to.x, t);
+    state.drone.y = lerp(move.from.y, move.to.y, t);
+    if(t >= 1){
+      state.droneMove = null;
+      if(state.loiterStrike){
+        state.loiterStrike = false;
+        state.impact = true;
+        spawnExplosion(pxX(state.tgt.x), pxY(state.tgt.y));
+        playOnce(sfx.strike);
+        setTimeout(()=>{ state.impact=false; }, 280);
+      }
+    }
+  }
+
+  function drawPidCallout(){
+    if(!state.running || activeStep !== 1) return;
+    const x = pxX(state.drone.x);
+    const y = pxY(state.drone.y) - 46*DPR;
+    const text = "Tgt Confirmed & Coordinates Acquired";
+    const pulse = (Math.sin(state.t*6) + 1) * 0.5;
+    ctx.save();
+    ctx.font = `${11*DPR}px ${getComputedStyle(document.body).fontFamily}`;
+    const w = ctx.measureText(text).width + 16*DPR;
+    const h = 20*DPR;
+    ctx.fillStyle = `rgba(12,18,24,${0.6 + 0.25*pulse})`;
+    ctx.strokeStyle = `rgba(55,214,122,${0.35 + 0.45*pulse})`;
+    ctx.lineWidth = 1*DPR;
+    roundRect(ctx, x - w/2, y - h/2, w, h, 8*DPR);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = `rgba(55,214,122,${0.55 + 0.45*pulse})`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  function spawnExplosion(x,y){
+    for(let i=0;i<26;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = lerp(70, 220, Math.random()) * DPR;
+      state.particles.push({
+        x,y,
+        vx: Math.cos(a)*sp,
+        vy: Math.sin(a)*sp,
+        life: lerp(0.25, 0.55, Math.random()),
+        t: 0,
+        r: lerp(2.5, 5.5, Math.random())*DPR
+      });
+    }
+  }
+
+  function drawParticles(dt){
+    if(state.particles.length===0) return;
+    ctx.save();
+    for(const p of state.particles){
+      p.t += dt;
+      const k = p.t / p.life;
+      p.x += p.vx*dt;
+      p.y += p.vy*dt;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+      const a = clamp(1-k, 0, 1);
+      ctx.globalAlpha = 0.55*a;
+      ctx.fillStyle = "rgba(255,138,76,1)";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r*(0.9 + 0.6*a), 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+    state.particles = state.particles.filter(p=>p.t < p.life);
+  }
+
+  function drawImpactRing(){
+    if(!state.impact) return;
+    const x=pxX(state.tgt.x), y=pxY(state.tgt.y);
+    const r=(26+20*Math.sin(state.t*10))*DPR;
+    ctx.save();
+    ctx.globalAlpha=0.40;
+    ctx.strokeStyle="rgba(255,138,76,.92)";
+    ctx.lineWidth=3*DPR;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke();
+    ctx.globalAlpha=0.12;
+    ctx.fillStyle="rgba(255,138,76,.85)";
+    ctx.beginPath(); ctx.arc(x,y,r*1.25,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawProjectile(dt){
+    if(!state.proj) return;
+    const nowT = state.t - state.proj.t0;
+    const t = clamp(nowT / state.proj.dur, 0, 1);
+
+    const fx = state.proj.from.x, fy = state.proj.from.y;
+    const tx = state.proj.to.x, ty = state.proj.to.y;
+
+    const mx = (fx+tx)/2;
+    const my = (fy+ty)/2 - 140*DPR;
+    const x = (1-t)*(1-t)*fx + 2*(1-t)*t*mx + t*t*tx;
+    const y = (1-t)*(1-t)*fy + 2*(1-t)*t*my + t*t*ty;
+
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.strokeStyle = "rgba(255,138,76,.65)";
+    ctx.lineWidth = 2*DPR;
+    ctx.beginPath();
+    ctx.moveTo(fx,fy);
+    ctx.quadraticCurveTo(mx,my, x,y);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,138,76,.92)";
+    ctx.beginPath();
+    ctx.arc(x,y, 3.2*DPR, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+
+    if(t >= 1){
+      state.proj = null;
+      state.impact = true;
+      spawnExplosion(tx, ty);
+      playOnce(sfx.strike);
+      setTimeout(()=>{ state.impact=false; }, 280);
+    }
+  }
+
+  function draw(){
+    if(!W || !H) return;
+    ctx.clearRect(0,0,W,H);
+
+    drawTerrain3D();
+    drawGrid();
+
+    updateDroneMove();
+    drawCone();
+    drawLinks();
+    drawBdaSweep();
+
+    const m=$("mode").value;
+    const shooterLabel = (m==="fpv") ? "LOITERING MUNITION" : "155mm GUN";
+    const shooterKind  = (m==="fpv") ? "drone" : "gun";
+    const shooterColor = (m==="fpv") ? "rgba(255,138,76,.88)" : "rgba(219,231,243,.85)";
+
+    if(m==="fpv"){
+      drawIcon(pxX(state.drone.x),pxY(state.drone.y),"drone",shooterLabel,shooterColor);
+      drawPidCallout();
+    } else if(m==="conventional"){
+      drawIcon(pxX(state.drone.x),pxY(state.drone.y),"cam","ISR CAMERA","rgba(86,167,255,.95)");
+      drawPidCallout();
+      drawIcon(pxX(state.gun.x),pxY(state.gun.y),shooterKind,shooterLabel,shooterColor);
+    } else {
+      drawIcon(pxX(state.drone.x),pxY(state.drone.y),"drone","ISR DRONE","rgba(86,167,255,.95)");
+      drawPidCallout();
+      drawIcon(pxX(state.gun.x),pxY(state.gun.y),shooterKind,shooterLabel,shooterColor);
+    }
+    drawIcon(pxX(state.c2.x),pxY(state.c2.y),"c2","C2 NODE","rgba(219,231,243,.85)");
+    drawIcon(pxX(state.tgt.x),pxY(state.tgt.y),"tgt","MBRL (TS)","rgba(255,93,93,.95)");
+
+    drawImpactRing();
+  }
+
+  // ===== Dragging =====
+  const hit = (mx,my,obj)=>{
+    const x=pxX(obj.x), y=pxY(obj.y);
+    const r=28*DPR;
+    return (mx-x)**2+(my-y)**2<=r*r;
+  };
+  let dragging=null;
+  cv.addEventListener("pointerdown",(e)=>{
+    const rect=cv.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*DPR;
+    const my=(e.clientY-rect.top)*DPR;
+    const order=["tgt","gun","c2","drone"];
+    for(const k of order){
+      if(hit(mx,my,state[k])){ dragging=k; cv.setPointerCapture(e.pointerId); break; }
+    }
+  });
+  cv.addEventListener("pointermove",(e)=>{
+    if(!dragging) return;
+    const rect=cv.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*DPR;
+    const my=(e.clientY-rect.top)*DPR;
+    state[dragging].x=clamp(mx/W,0.05,0.95);
+    state[dragging].y=clamp(my/H,0.08,0.92);
+    draw();
+    updateComputed();
+  });
+  cv.addEventListener("pointerup",()=>dragging=null);
+
+  // ===== Model / Metrics =====
+  function computeParts(){
+    const det=+$("det").value;
+    const pid=+$("pid").value;
+    const c2=+$("c2").value;
+    const fire=+$("fire").value;
+    const bda=+$("bda").value;
+    const ew=+$("ew").value;
+    const human=+$("human").value;
+    const mode=$("mode").value;
+
+    let detM=1, pidM=1, c2M=1, fireM=1, bdaM=1;
+    if(mode==="conventional"){
+      detM=2.3; pidM=2.1; c2M=3.0; fireM=1.4; bdaM=2.2;
+    } else if(mode==="drone"){
+      detM=1.0; pidM=1.0; c2M=1.0; fireM=1.0; bdaM=1.0;
+    } else {
+      detM=0.85; pidM=0.85; c2M=0.75; fireM=0.70; bdaM=0.65;
+    }
+
+    const ewDelay = 1 + ew/16;
+    const humanAdd = human * 6;
+    const humanDelay = 1 + human/30;
+
+    const tDetect = det*detM;
+    const tPid    = (pid*pidM*humanDelay) + humanAdd*0.6;
+    const tC2     = (c2*c2M*ewDelay*humanDelay) + humanAdd;
+    const tFire   = fire*fireM;
+    const tBda    = bda*bdaM*ewDelay;
+
+    const tss = tDetect + tPid + tC2 + tFire + tBda;
+    return {tss, tDetect, tPid, tC2, tFire, tBda, ew, human, mode};
+  }
+
+  function computeFRE(p){
+    const base = (p.mode==="conventional") ? 0.35 : (p.mode==="drone" ? 0.70 : 0.82);
+    const a=0.060, b=0.045, c=0.55;
+    const quality = Math.exp(-a*p.ew) * Math.exp(-b*p.human);
+    const tempo = Math.exp(-c*(p.tss/600));
+    const fre = clamp(base * quality * (0.55 + 0.45*tempo), 0.05, 0.95);
+    return {fre, base, a, b, c, quality, tempo};
+  }
+
+  function computeSurvivability(p){
+    const exposure = (p.mode==="fpv") ? (0.55*p.tss) : p.tss;
+    const kBase = (p.mode==="conventional") ? 0.00125 : (p.mode==="drone" ? 0.00072 : 0.00045);
+    const k = kBase * (1 + p.ew/25) * (1 + p.human/35);
+    const survive = clamp(Math.exp(-k * exposure), 0.05, 0.99);
+    return {survive, exposure, kBase, k};
+  }
+
+  function formatTime(sec){
+    if(sec < 90) return `${sec.toFixed(0)}s`;
+    const m=Math.floor(sec/60);
+    const s=Math.round(sec - m*60);
+    return `${m}m ${String(s).padStart(2,"0")}s`;
+  }
+
+  function interpret(tss){
+    if(tss<=180) return {label:"Very fast (TS capable)", cls:"good"};
+    if(tss<=360) return {label:"Fast (compressed OODA)", cls:"good"};
+    if(tss<=900) return {label:"Moderate", cls:"warn"};
+    return {label:"Slow", cls:"bad"};
+  }
+
+  const segDefs = [
+    {k:"tDetect", name:"Detection", color:"rgba(86,167,255,.42)"},
+    {k:"tPid",    name:"PID",       color:"rgba(219,231,243,.20)"},
+    {k:"tC2",     name:"C2",        color:"rgba(90,169,255,.20)"},
+    {k:"tFire",   name:"Weapon",    color:"rgba(255,138,76,.22)"},
+    {k:"tBda",    name:"BDA",       color:"rgba(55,214,122,.20)"}
+  ];
+
+  function updateTimelineTarget(stackId, legendId, totalId, p){
+    const stack=$(stackId);
+    const legend=$(legendId);
+    if(!stack || !legend) return;
+    stack.innerHTML=""; legend.innerHTML="";
+    if(totalId){
+      const totalEl = $(totalId);
+      if(totalEl) totalEl.textContent = `Total: ${formatTime(p.tss)}`;
+    }
+
+    segDefs.forEach(def=>{
+      const v=p[def.k];
+      const pct=(v/p.tss)*100;
+      const seg=document.createElement("div");
+      seg.className="seg";
+      seg.style.width=`${pct}%`;
+      seg.style.background=def.color;
+      stack.appendChild(seg);
+
+      const li=document.createElement("div");
+      li.className="leg-item";
+      const dot=document.createElement("div");
+      dot.className="dot";
+      dot.style.background=def.color;
+      const text=document.createElement("span");
+      text.textContent = `${def.name}: ${formatTime(v)}`;
+      li.appendChild(dot); li.appendChild(text);
+      legend.appendChild(li);
+    });
+  }
+
+  function updateTimeline(p){
+    updateTimelineTarget("stack","legend","barTotal",p);
+    updateTimelineTarget("stackParams","legendParams","barTotalParams",p);
+  }
+
+  function updateComputed(){
+    const p=computeParts();
+    const f=computeFRE(p);
+    const s=computeSurvivability(p);
+
+    const tssStr=formatTime(p.tss);
+    const freStr=`${Math.round(f.fre*100)}%`;
+    const survStr=`${Math.round(s.survive*100)}%`;
+
+    $("tssOut").textContent=tssStr;
+    $("freOut").textContent=freStr;
+    $("survOut").textContent=survStr;
+
+    $("tssPill").textContent=tssStr;
+    $("frePill").textContent=freStr;
+    $("survPill").textContent=survStr;
+
+    const modeName = (p.mode==="conventional") ? "Conventional" : (p.mode==="drone" ? "Drone-Assisted" : "FPV/Loitering");
+    $("modePill").textContent=modeName;
+
+    const it=interpret(p.tss);
+    $("interpretBadge").textContent=it.label;
+    $("interpretBadge").className=`badge ${it.cls}`;
+
+    updateTimeline(p);
+    return {p,f,s};
+  }
+
+  // ===== HUD highlight =====
+  function setActiveStep(idx){
+    const steps = ["stepDetect","stepPID","stepC2","stepFire","stepBDA"];
+    steps.forEach((id,i)=>$(id).classList.toggle("active", i===idx));
+    activeStep = idx;
+  }
+  function setHud({detect,pid,c2,fire,bda,clock}){
+    if(clock!=null) $("hudClock").textContent = clock;
+    if(detect!=null) $("hudDetect").textContent = detect;
+    if(pid!=null) $("hudPID").textContent = pid;
+    if(c2!=null) $("hudC2").textContent = c2;
+    if(fire!=null) $("hudFire").textContent = fire;
+    if(bda!=null) $("hudBDA").textContent = bda;
+  }
+  function setStatus(text, cls){
+    const btn = $("statusBadgeBtn");
+    btn.textContent=text;
+    btn.className=`badge ${cls||""}`;
+    btn.disabled=true;
+    btn.classList.remove("action");
+  }
+  function setStatusAction(text, cls, outcome){
+    const btn = $("statusBadgeBtn");
+    btn.textContent=text;
+    btn.className=`badge ${cls||""} action`;
+    btn.disabled=false;
+    state.lastOutcome = outcome;
+  }
+
+  function setProg(id, pct){
+    const el = $(id);
+    if(!el) return;
+    el.style.width = `${clamp(pct,0,100)}%`;
+  }
+  function resetProgress(){
+    ["progDetect","progPID","progC2","progFire","progBDA"].forEach(id=>setProg(id,0));
+  }
+  function updateStepProgress(T, t1, t2, t3, t4, t5){
+    const stages = [
+      {id:"progDetect", start:0, end:t1},
+      {id:"progPID", start:t1, end:t2},
+      {id:"progC2", start:t2, end:t3},
+      {id:"progFire", start:t3, end:t4},
+      {id:"progBDA", start:t4, end:t5}
+    ];
+    stages.forEach(s=>{
+      let pct = 0;
+      if(T >= s.end) pct = 100;
+      else if(T > s.start) pct = ((T - s.start) / Math.max(0.001, s.end - s.start)) * 100;
+      setProg(s.id, pct);
+    });
+  }
+
+  function syncTimeScale(){
+    timeScale = parseFloat($("timeScale").value);
+    $("timeScaleVal").textContent = `x${timeScale.toFixed(2)}`;
+  }
+
+  // ===== Sync displayed slider values =====
+  function syncVals(){
+    $("ewVal").textContent=$("ew").value;
+    $("humanVal").textContent=$("human").value;
+    $("detVal").textContent=$("det").value;
+    $("pidVal").textContent=$("pid").value;
+    $("c2Val").textContent=$("c2").value;
+    $("fireVal").textContent=$("fire").value;
+    $("bdaVal").textContent=$("bda").value;
+    $("trialsVal").textContent=$("trials").value;
+    $("sigmaVal").textContent=$("sigma").value + "%";
+    $("elevVal").textContent=$("elev").value;
+    terrain = null;
+    draw();
+  }
+
+  function applyModePreset(){
+    const m=$("mode").value;
+    if(m==="conventional"){
+      $("det").value=240; $("pid").value=90; $("c2").value=240; $("fire").value=90; $("bda").value=120;
+      $("ew").value=3; $("human").value=5;
+    overall_bumpModelVersion();
+    } else if(m==="drone"){
+      $("det").value=90; $("pid").value=25; $("c2").value=60; $("fire").value=45; $("bda").value=25;
+      $("ew").value=2; $("human").value=3;
+    } else {
+      $("det").value=60; $("pid").value=18; $("c2").value=35; $("fire").value=30; $("bda").value=15;
+      $("ew").value=2; $("human").value=2;
+    }
+    syncVals();
+    updateComputed();
+    if(m !== "fpv") state.loiterDone = false;
+    if(audioOn){
+      ensureAudio();
+      if(audioCtx.state === "suspended") audioCtx.resume();
+      startDroneBuzz(m==="fpv" ? "loiter" : "isr");
+    }
+  }
+
+  ["ew","human","det","pid","c2","fire","bda","trials","sigma","elev"].forEach(id=>{
+    $(id).addEventListener("input", ()=>{
+      syncVals();
+      updateComputed();
+    });
+  });
+  $("timeScale").addEventListener("input", syncTimeScale);
+  $("mode").addEventListener("change", applyModePreset);
+
+  // ===== Tabs =====
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      const key=t.dataset.tab;
+      document.querySelectorAll(".pane").forEach(p=>p.classList.remove("active"));
+      $("pane-"+key).classList.add("active");
+    });
+  });
+
+  // ===== HUD drag =====
+  const hud = $("hud");
+  const hudHdr = hud.querySelector(".hdr");
+  const overlayEl = document.querySelector(".overlay");
+  const tstgtPanel = $("tstgtPanel");
+  const tstgtVideo = $("tstgtVideo");
+  let hudOffset = {x:0, y:0};
+  let hudDrag = null;
+
+  function applyHudOffset(x,y){
+    if(!overlayEl) return;
+    const or = overlayEl.getBoundingClientRect();
+    const hr = hud.getBoundingClientRect();
+    if(!or.width || !or.height || !hr.width || !hr.height) return;
+    const maxX = Math.max(0, or.width - hr.width);
+    const maxY = Math.max(0, or.height - hr.height);
+    hudOffset.x = clamp(x, 0, maxX);
+    hudOffset.y = clamp(y, 0, maxY);
+    hud.style.transform = `translate(${hudOffset.x}px, ${hudOffset.y}px)`;
+    if(tstgtPanel){
+      tstgtPanel.style.transform = `translate(${hudOffset.x}px, ${hudOffset.y}px)`;
+    }
+  }
+
+  hudHdr.addEventListener("pointerdown", (e)=>{
+    hudDrag = {x:e.clientX, y:e.clientY, baseX:hudOffset.x, baseY:hudOffset.y};
+    hudHdr.setPointerCapture(e.pointerId);
+  });
+  hudHdr.addEventListener("pointermove", (e)=>{
+    if(!hudDrag) return;
+    const dx = e.clientX - hudDrag.x;
+    const dy = e.clientY - hudDrag.y;
+    applyHudOffset(hudDrag.baseX + dx, hudDrag.baseY + dy);
+  });
+  ["pointerup","pointercancel","pointerleave"].forEach(evt=>{
+    hudHdr.addEventListener(evt, ()=>{ hudDrag = null; });
+  });
+
+  // ===== Explain modal =====
+  function showModal(title, bodyHtml){
+    $("modalTitle").textContent=title;
+    $("modalBody").innerHTML=bodyHtml;
+    $("modalBackdrop").classList.add("show");
+    $("modalBackdrop").setAttribute("aria-hidden","false");
+  }
+  function closeModal(){
+    $("modalBackdrop").classList.remove("show");
+    $("modalBackdrop").setAttribute("aria-hidden","true");
+  }
+  $("btnCloseModal").addEventListener("click", closeModal);
+  $("modalBackdrop").addEventListener("click", (e)=>{ if(e.target === $("modalBackdrop")) closeModal(); });
+
+  function setStatusSafe(text, cls){
+    const btn = $("statusBadgeBtn");
+    btn.textContent=text;
+    btn.className=`badge ${cls||""}`;
+    btn.disabled=true;
+    btn.classList.remove("action");
+  }
+  function setStatusAction(text, cls, outcome){
+    const btn = $("statusBadgeBtn");
+    btn.textContent=text;
+    btn.className=`badge ${cls||""} action`;
+    btn.disabled=false;
+    state.lastOutcome = outcome;
+  }
+  setStatus = setStatusSafe;
+
+  function buildOutcomeExplain(o){
+    const tempo = clamp(1 - (o.p.tss/900), 0, 1);
+    const reason = o.hit
+      ? "Target neutralized due to favorable FRE and timely kill-chain tempo."
+      : "Target escaped due to low FRE and/or delayed kill-chain tempo.";
+    return {
+      reason,
+      tempo
+    };
+  }
+  function drawOutcomeMini(canvas, fre, survive, tempo){
+    const r = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+    canvas.width = Math.floor(r.width*dpr);
+    canvas.height = Math.floor(r.height*dpr);
+    const g = canvas.getContext("2d");
+    const w = canvas.width, h = canvas.height;
+    g.clearRect(0,0,w,h);
+
+    const pad = 18*dpr;
+    const barW = (w - pad*2) / 3;
+    const maxH = h - pad*2;
+    const vals = [fre, survive, tempo];
+    const labels = ["FRE","SURV","TEMPO"];
+    const colors = ["rgba(90,169,255,.55)","rgba(55,214,122,.55)","rgba(247,201,72,.55)"];
+
+    g.font = `${10*dpr}px ${getComputedStyle(document.body).fontFamily}`;
+    g.textAlign = "center";
+    g.textBaseline = "top";
+
+    for(let i=0;i<3;i++){
+      const v = clamp(vals[i],0,1);
+      const x = pad + i*barW;
+      const bh = v * maxH;
+      g.fillStyle = colors[i];
+      g.fillRect(x + barW*0.2, h-pad-bh, barW*0.6, bh);
+      g.fillStyle = "rgba(219,231,243,.85)";
+      g.fillText(labels[i], x + barW*0.5, h - pad + 6*dpr);
+    }
+  }
+
+  $("statusBadgeBtn").addEventListener("click", ()=>{
+    if(!state.lastOutcome) return;
+    const o = state.lastOutcome;
+    const meta = buildOutcomeExplain(o);
+    const body = `
+      <div class="mono-box">
+Outcome:
+  ${o.hit ? "Target neutralized" : "Target escaped"}
+
+Reason:
+  ${meta.reason}
+
+Key metrics:
+  TSS   = ${formatTime(o.p.tss)}
+  FRE   = ${(o.f.fre*100).toFixed(1)}%
+  Surv  = ${(o.s.survive*100).toFixed(1)}%
+      </div>
+      <div class="mono-box">
+        <canvas id="outcomeChart" style="width:100%;height:140px;"></canvas>
+      </div>
+    `;
+    showModal("Outcome Explanation", body);
+    const canvas = $("outcomeChart");
+    if(canvas) drawOutcomeMini(canvas, o.f.fre, o.s.survive, meta.tempo);
+  });
+
+  $("btnExplainFRE").addEventListener("click", ()=>{
+    const {p,f} = updateComputed();
+    const body = `
+      <div class="mono-box">
+FRE = clamp( base(mode) × quality(EW,Human) × (0.55 + 0.45×tempo(TSS)), 0.05..0.95 )
+
+base(mode):
+  Conventional = 0.35
+  Drone-Assisted = 0.70
+  FPV/Loitering = 0.82
+
+quality(EW,Human) = exp(-a×EW) × exp(-b×Human)
+tempo(TSS)        = exp(-c×(TSS/600))
+      </div>
+
+      <div class="mono-box">
+Current:
+  Mode   = ${p.mode}
+  EW     = ${p.ew}
+  Human  = ${p.human}
+  TSS    = ${formatTime(p.tss)} (${p.tss.toFixed(1)} sec)
+
+Params:
+  a = ${f.a}  b = ${f.b}  c = ${f.c}
+
+Computed:
+  base    = ${f.base.toFixed(3)}
+  quality = ${f.quality.toFixed(3)}
+  tempo   = ${f.tempo.toFixed(3)}
+
+FRE:
+  ${(f.fre*100).toFixed(1)}%
+      </div>
+    `;
+    showModal("FRE Calculation (Explainable Model)", body);
+  });
+
+  $("btnExplainSurv").addEventListener("click", ()=>{
+    const {p,s} = updateComputed();
+    const body = `
+      <div class="mono-box">
+exposure = TSS              (Conventional / Drone-Assisted)
+exposure = 0.55 × TSS       (FPV/Loitering; reduced gun signature)
+
+P_survive = clamp( exp(-k × exposure), 0.05..0.99 )
+
+k = kBase(mode) × (1 + EW/25) × (1 + Human/35)
+kBase:
+  Conventional = 0.00125
+  Drone-Assisted = 0.00072
+  FPV/Loitering = 0.00045
+      </div>
+
+      <div class="mono-box">
+Current:
+  Mode     = ${p.mode}
+  EW       = ${p.ew}
+  Human    = ${p.human}
+  TSS      = ${formatTime(p.tss)} (${p.tss.toFixed(1)} sec)
+
+Derived:
+  exposure = ${formatTime(s.exposure)} (${s.exposure.toFixed(1)} sec)
+  kBase    = ${s.kBase.toFixed(6)}
+  k        = ${s.k.toFixed(6)}
+
+Survivability:
+  ${(s.survive*100).toFixed(1)}%
+      </div>
+    `;
+    showModal("Survivability Calculation (Explainable Model)", body);
+  });
+
+  // ===== Mission Run =====
+  function runOnce(){
+    if(state.running) return;
+
+    if(audioOn){
+      ensureAudio();
+      if(audioCtx.state === "suspended") audioCtx.resume();
+      startDroneBuzz($("mode").value==="fpv" ? "loiter" : "isr");
+    }
+
+    const {p,f,s} = updateComputed();
+    const mode = p.mode;
+
+    state.running=true;
+    state.t=0;
+    state.impact=false;
+    state.shotLine=false;
+    state.proj=null;
+    state.particles=[];
+    if(mode !== "conventional"){
+      state.droneMove = {
+        t0: 0,
+        dur: 1.6,
+        from: {x: state.drone.x, y: state.drone.y},
+        to: {
+          x: state.tgt.x,
+          y: clamp(state.tgt.y - 0.18, 0.08, 0.92)
+        }
+      };
+    } else {
+      state.droneMove = null;
+    }
+    state.loiterStrike = false;
+    state.loiterDone = false;
+
+    playLoop(sfx.quad);
+
+    setStatus("RUNNING","warn");
+    setHud({clock:"T+00.0s", detect:"SCANNING", pid:"STANDBY", c2:"STANDBY", fire:"STANDBY", bda:"STANDBY"});
+    setActiveStep(0);
+    resetProgress();
+
+    const t1=p.tDetect;
+    const t2=t1+p.tPid;
+    const t3=t2+p.tC2;
+    const t4=t3+p.tFire;
+    const t5=t4+p.tBda;
+
+    const hit = Math.random() < f.fre;
+
+    const from = {x:pxX(state.gun.x), y:pxY(state.gun.y)};
+    const to   = {x:pxX(state.tgt.x), y:pxY(state.tgt.y)};
+
+    let fireTriggered = false;
+    let projTriggered = false;
+    let pidTriggered = false;
+    let c2Triggered = false;
+
+    let last = performance.now();
+    function frame(now){
+      if(!state.running){
+        draw();
+        return;
+      }
+      const dtRaw = Math.min(0.05, (now-last)/1000);
+      const dt = dtRaw * timeScale;
+      last = now;
+
+      state.t += dt;
+      const T = state.t;
+      $("hudClock").textContent = `T+${T.toFixed(1)}s`;
+
+      if(T < t1){
+        setActiveStep(0);
+        playLoop(sfx.quad);
+        setHud({detect:"SCANNING", pid:"STANDBY", c2:"STANDBY", fire:"STANDBY", bda:"STANDBY"});
+      } else if(T < t2){
+        if(!pidTriggered){
+          pidTriggered = true;
+          playOnce(sfx.confirm);
+        }
+        setActiveStep(1);
+        stopLoop(sfx.quad);
+        setHud({detect:"TARGET ACQUIRED", pid:"CONFIRMING", c2:"STANDBY", fire:"STANDBY", bda:"STANDBY"});
+      } else if(T < t3){
+        if(!c2Triggered){
+          c2Triggered = true;
+          playOnce(sfx.c2);
+        }
+        setActiveStep(2);
+        setHud({pid:"PID CONFIRMED", c2:"ROUTING / AUTHORISE", fire:"STANDBY", bda:"STANDBY"});
+      } else if(T < t4){
+        setActiveStep(3);
+        state.shotLine = mode !== "fpv";
+        setHud({c2:"FIRE MISSION ISSUED", fire:(mode==="fpv"?"LOITER STRIKE":"EXECUTING"), bda:"STANDBY"});
+
+        if(!fireTriggered){
+          fireTriggered = true;
+          playOnce(sfx.fired);
+          if(mode==="fpv") startDroneBuzz("loiter");
+        }
+
+        if(!projTriggered && (T > (t3 + (t4-t3)*0.35))){
+          projTriggered = true;
+          if(mode==="fpv"){
+            state.loiterStrike = true;
+            state.droneMove = {t0: state.t, dur: 0.9, from: {x: state.drone.x, y: state.drone.y}, to: {x: state.tgt.x, y: state.tgt.y}};
+          } else {
+            state.proj = {
+              t0: state.t,
+              dur: 0.9,
+              from,
+              to
+            };
+          }
+        }
+      } else if(T < t5){
+        setActiveStep(4);
+        setHud({fire: hit ? "IMPACT" : "SPLASH", bda:"ASSESSING"});
+      } else {
+        state.running=false;
+        state.shotLine=false;
+        state.proj=null;
+        state.loiterStrike=false;
+        if(mode === "fpv") state.loiterDone = true;
+        stopLoop(sfx.quad);
+        setActiveStep(-1);
+
+        if(hit){
+          setStatusAction("TARGET NEUTRALISED","good",{hit,p,f,s});
+          setHud({bda:"CONFIRMED EFFECT", fire:"CEASE FIRE"});
+        } else {
+          setStatusAction("TARGET ESCAPED / RE-TASK","bad",{hit,p,f,s});
+          setHud({bda:"INCONCLUSIVE", fire:"RE-ATTACK REQUIRED"});
+        }
+        if(audioOn) startDroneBuzz(mode==="fpv" ? "loiter" : "isr");
+        overall_onModelChanged();
+        draw();
+        return;
+      }
+
+      updateStepProgress(T, t1, t2, t3, t4, t5);
+      draw();
+      drawProjectile(dt);
+      drawParticles(dt);
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function reset(){
+    state.running=false;
+    state.t=0;
+    state.impact=false;
+    state.shotLine=false;
+    state.proj=null;
+    state.particles=[];
+    state.droneMove=null;
+    state.loiterStrike=false;
+    state.loiterDone=false;
+    state.lastOutcome=null;
+    stopLoop(sfx.quad);
+    setStatus("READY","");
+    setActiveStep(-1);
+    resetProgress();
+    setHud({clock:"T+00.0s", detect:"STANDBY", pid:"STANDBY", c2:"STANDBY", fire:"STANDBY", bda:"STANDBY"});
+    draw();
+    updateComputed();
+    if(audioOn){
+      ensureAudio();
+      if(audioCtx.state === "suspended") audioCtx.resume();
+      startDroneBuzz($("mode").value==="fpv" ? "loiter" : "isr");
+    } else {
+      if(audioCtx) stopDroneBuzz();
+    }
+  }
+
+  $("btnRun").addEventListener("click", runOnce);
+  $("btnTSTgt").addEventListener("click", ()=>{
+    if(!tstgtPanel || !tstgtVideo) return;
+    tstgtPanel.classList.add("show");
+    tstgtPanel.setAttribute("aria-hidden","false");
+    if(hud) hud.classList.add("video-active");
+    tstgtVideo.playbackRate = 2.5;
+    tstgtVideo.muted = false;
+    try{ tstgtVideo.currentTime = 0; }catch(e){}
+    tstgtVideo.play().catch(()=>{});
+  });
+  $("btnReset").addEventListener("click", ()=>{
+    state.drone={x:.50,y:.15};
+    state.gun={x:.20,y:.75};
+    state.c2={x:.50,y:.65};
+    state.tgt={x:.86,y:.80};
+    reset();
+    if(tstgtPanel && tstgtVideo){
+      tstgtPanel.classList.remove("show");
+      tstgtPanel.setAttribute("aria-hidden","true");
+      if(hud) hud.classList.remove("video-active");
+      tstgtVideo.pause();
+      tstgtVideo.muted = false;
+      try{ tstgtVideo.currentTime = 0; }catch(e){}
+    }
+    overall_onModelChanged();
+  });
+
+  // ===== Monte Carlo (kept minimal) =====
+  const mc = {running:false,dataTss:[],dataFre:[],hits:0,trials:0,done:0,binsTss:40,binsFre:25};
+
+  function randn(){
+    let u=0,v=0;
+    while(u===0) u=Math.random();
+    while(v===0) v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+  function percentile(sorted, p){
+    if(sorted.length===0) return NaN;
+    const idx = (sorted.length-1)*p;
+    const lo = Math.floor(idx), hi=Math.ceil(idx);
+    if(lo===hi) return sorted[lo];
+    return sorted[lo] + (sorted[hi]-sorted[lo])*(idx-lo);
+  }
+  function minMax(arr){
+    let mn = Infinity, mx = -Infinity;
+    for(const v of arr){
+      if(v < mn) mn = v;
+      if(v > mx) mx = v;
+    }
+    return {mn, mx};
+  }
+  function deepClone(obj){
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function drawHistogram(canvas, values, bins, xMin, xMax, labelFmt, vline){
+    const c=canvas;
+    const r=c.getBoundingClientRect();
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+    c.width = Math.floor(r.width*dpr);
+    c.height= Math.floor(r.height*dpr);
+    const g=c.getContext("2d");
+    const w=c.width, h=c.height;
+
+    g.clearRect(0,0,w,h);
+
+    g.globalAlpha=0.18;
+    g.strokeStyle="rgba(255,255,255,.08)";
+    g.lineWidth=1*dpr;
+    const step=60*dpr;
+    for(let x=0;x<=w;x+=step){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke();}
+    for(let y=0;y<=h;y+=step){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}
+    g.globalAlpha=1;
+
+    if(values.length===0){
+      g.fillStyle="rgba(159,178,198,.75)";
+      g.font=`${12*dpr}px ${getComputedStyle(document.body).fontFamily}`;
+      g.fillText("No data yet. Run Monte Carlo.", 12*dpr, 30*dpr);
+      return;
+    }
+
+    const counts = new Array(bins).fill(0);
+    const range = xMax-xMin;
+    for(const v of values){
+      const t = clamp((v-xMin)/range, 0, 0.999999);
+      const i = Math.floor(t*bins);
+      counts[i]++;
+    }
+    const maxC = Math.max(...counts,1);
+
+    const pad = 18*dpr;
+    const bw = (w-2*pad)/bins;
+
+    for(let i=0;i<bins;i++){
+      const x = pad + i*bw;
+      const bh = (counts[i]/maxC) * (h-2*pad);
+      const y = h-pad-bh;
+      g.fillStyle="rgba(90,169,255,.28)";
+      g.fillRect(x, y, bw-1*dpr, bh);
+    }
+
+    g.strokeStyle="rgba(255,255,255,.18)";
+    g.beginPath(); g.moveTo(pad, h-pad); g.lineTo(w-pad, h-pad); g.stroke();
+
+    if(vline!=null){
+      const tx = pad + clamp((vline-xMin)/range, 0, 1) * (w-2*pad);
+      g.strokeStyle="rgba(255,138,76,.55)";
+      g.lineWidth=2*dpr;
+      g.beginPath(); g.moveTo(tx, pad); g.lineTo(tx, h-pad); g.stroke();
+    }
+
+    g.fillStyle="rgba(159,178,198,.9)";
+    g.font=`${11*dpr}px ${getComputedStyle(document.body).fontFamily}`;
+    g.fillText(labelFmt(xMin), pad, h-6*dpr);
+    const maxLabel = labelFmt(xMax);
+    const tw = g.measureText(maxLabel).width;
+    g.fillText(maxLabel, w-pad-tw, h-6*dpr);
+  }
+
+  function drawOutcomeBars(canvas, hitRate, surviveMean){
+    const c=canvas;
+    const r=c.getBoundingClientRect();
+    const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+    c.width=Math.floor(r.width*dpr);
+    c.height=Math.floor(r.height*dpr);
+    const g=c.getContext("2d");
+    const w=c.width, h=c.height;
+    g.clearRect(0,0,w,h);
+
+    g.globalAlpha=0.18;
+    g.strokeStyle="rgba(255,255,255,.08)";
+    g.lineWidth=1*dpr;
+    const step=60*dpr;
+    for(let x=0;x<=w;x+=step){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke();}
+    for(let y=0;y<=h;y+=step){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}
+    g.globalAlpha=1;
+
+    const pad=22*dpr;
+    const barW=(w-3*pad)/2;
+    const baseY=h-pad;
+    const maxH=h-2*pad;
+
+    g.fillStyle="rgba(55,214,122,.22)";
+    g.fillRect(pad, baseY - hitRate*maxH, barW, hitRate*maxH);
+    g.strokeStyle="rgba(55,214,122,.45)";
+    g.strokeRect(pad, baseY - hitRate*maxH, barW, hitRate*maxH);
+
+    g.fillStyle="rgba(90,169,255,.22)";
+    g.fillRect(2*pad+barW, baseY - surviveMean*maxH, barW, surviveMean*maxH);
+    g.strokeStyle="rgba(90,169,255,.45)";
+    g.strokeRect(2*pad+barW, baseY - surviveMean*maxH, barW, surviveMean*maxH);
+
+    g.fillStyle="rgba(219,231,243,.92)";
+    g.font=`${12*dpr}px ${getComputedStyle(document.body).fontFamily}`;
+    g.fillText(`Hit rate`, pad, pad-2*dpr);
+    g.fillText(`Survive`, 2*pad+barW, pad-2*dpr);
+
+    g.fillStyle="rgba(159,178,198,.95)";
+    g.font=`${11*dpr}px ${getComputedStyle(document.body).fontFamily}`;
+    g.fillText(`${Math.round(hitRate*100)}%`, pad, baseY+14*dpr);
+    g.fillText(`${Math.round(surviveMean*100)}%`, 2*pad+barW, baseY+14*dpr);
+
+    g.strokeStyle="rgba(255,255,255,.18)";
+    g.beginPath(); g.moveTo(pad, baseY); g.lineTo(w-pad, baseY); g.stroke();
+  }
+
+  function mcClear(){
+    mc.running=false;
+    mc.dataTss=[]; mc.dataFre=[]; mc.hits=0; mc.trials=0; mc.done=0;
+    $("mcBadge").textContent="IDLE"; $("mcBadge").className="badge";
+    $("mcProg").style.width="0%";
+    $("mcProgText").textContent="0%";
+    $("mcTssStats").textContent="—";
+    $("mcFreStats").textContent="—";
+    $("mcOutStats").textContent="—";
+    drawHistogram($("mcTss"), [], 40, 0, 1, (x)=>String(x), null);
+    drawHistogram($("mcFre"), [], 25, 0, 1, (x)=>String(x), null);
+    drawOutcomeBars($("mcOut"), 0, 0);
+  }
+
+  function mcRun(){
+    if(mc.running) return;
+    mcClear();
+    mc.running=true;
+    $("mcBadge").textContent="RUNNING";
+    $("mcBadge").className="badge warn";
+
+    const N=+$("trials").value;
+    const sigmaPct=+$("sigma").value/100;
+    mc.trials=N;
+
+    const baseP = computeParts();
+    const means = {tDetect:baseP.tDetect,tPid:baseP.tPid,tC2:baseP.tC2,tFire:baseP.tFire,tBda:baseP.tBda};
+
+    const sample = (mu)=>Math.max(0, mu + randn()*(mu*sigmaPct));
+
+    let surviveSum=0;
+
+    function batch(){
+      if(!mc.running) return;
+
+      const batchSize = 300;
+      const start = mc.done;
+      const end = Math.min(N, start + batchSize);
+
+      for(let i=start;i<end;i++){
+        const tDetect = sample(means.tDetect);
+        const tPid    = sample(means.tPid);
+        const tC2     = sample(means.tC2);
+        const tFire   = sample(means.tFire);
+        const tBda    = sample(means.tBda);
+
+        const p = {...baseP, tDetect,tPid,tC2,tFire,tBda, tss:tDetect+tPid+tC2+tFire+tBda};
+        const f = computeFRE(p);
+        const s = computeSurvivability(p);
+
+        mc.dataTss.push(p.tss);
+        mc.dataFre.push(f.fre);
+        if(Math.random() < f.fre) mc.hits++;
+        surviveSum += s.survive;
+      }
+
+      mc.done = end;
+      const prog = (mc.done/N)*100;
+      $("mcProg").style.width = `${prog.toFixed(1)}%`;
+      $("mcProgText").textContent = `${prog.toFixed(1)}%`;
+
+      if(mc.dataTss.length){
+        const tssMean = mc.dataTss.reduce((a,b)=>a+b,0)/mc.dataTss.length;
+        const freMean = mc.dataFre.reduce((a,b)=>a+b,0)/mc.dataFre.length;
+
+        const tssSorted=[...mc.dataTss].sort((a,b)=>a-b);
+        const p10 = percentile(tssSorted,0.10);
+        const p50 = percentile(tssSorted,0.50);
+        const p90 = percentile(tssSorted,0.90);
+
+        $("mcTssStats").textContent = `mean ${formatTime(tssMean)} · P50 ${formatTime(p50)}`;
+        $("mcFreStats").textContent = `mean ${(freMean*100).toFixed(1)}%`;
+
+        const hitRate = mc.hits/mc.dataFre.length;
+        const survMean = surviveSum/mc.dataFre.length;
+        $("mcOutStats").textContent = `hit ${(hitRate*100).toFixed(1)}% · survive ${(survMean*100).toFixed(1)}%`;
+
+        const pad = 0.12*(p90-p10 || 1);
+        const xMin = Math.max(0, p10-pad);
+        const xMax = p90+pad;
+
+        drawHistogram($("mcTss"), mc.dataTss, mc.binsTss, xMin, xMax, (x)=>formatTime(x), tssMean);
+        drawHistogram($("mcFre"), mc.dataFre, mc.binsFre, 0.0, 1.0, (x)=>`${Math.round(x*100)}%`, freMean);
+        drawOutcomeBars($("mcOut"), hitRate, survMean);
+      }
+
+      if(mc.done < N){
+        requestAnimationFrame(batch);
+      } else {
+        mc.running=false;
+        $("mcBadge").textContent="DONE";
+        $("mcBadge").className="badge good";
+      }
+    }
+    requestAnimationFrame(batch);
+  }
+
+  $("btnRunMC").addEventListener("click", mcRun);
+  $("btnClearMC").addEventListener("click", mcClear);
+
+  // ===== Probabilistic Kill-Chain Closure (New) =====
+  const probSteps = [
+    {key:"t1", label:"1 Detection & Classification (T1)"},
+    {key:"t2", label:"2 Geolocation / Target Fix (T2)"},
+    {key:"t3", label:"3 Communications / Data Link (T3)"},
+    {key:"t4", label:"4 C2 Decision (T4)"},
+    {key:"t5", label:"5 Fire Mission Processing (T5)"},
+    {key:"t6", label:"6 Weapon Time of Flight (T6)"}
+  ];
+  const probVuln = {key:"tv", label:"Target Vulnerability Window (T_V)"};
+  const probDefaults = {t6Mean:35, t6Spread:3, tvMean:240, tvSpread:90};
+  const probStorageKey = "milit_probclosure_v1";
+
+  function commsDefaults(ew){
+    const mean = 18 * (1 + ew/8);
+    const spread = mean * 0.35;
+    return {mean, spread};
+  }
+
+  function getBaseMeans(){
+    const p = computeParts();
+    const comms = commsDefaults(p.ew);
+    return {
+      t1: p.tDetect,
+      t2: p.tPid,
+      t3: comms.mean,
+      t4: p.tC2,
+      t5: p.tFire,
+      t6: probDefaults.t6Mean,
+      tv: probDefaults.tvMean,
+      t3Spread: comms.spread,
+      t6Spread: probDefaults.t6Spread,
+      tvSpread: probDefaults.tvSpread
+    };
+  }
+
+  function loadProbConfig(){
+    try{
+      const raw = localStorage.getItem(probStorageKey);
+      if(!raw) return null;
+      return JSON.parse(raw);
+    } catch(e){
+      return null;
+    }
+  }
+  function saveProbConfig(cfg){
+    try{
+      localStorage.setItem(probStorageKey, JSON.stringify(cfg));
+    } catch(e){}
+  }
+
+  function buildProbRow(target, key, label, cfg){
+    const row = document.createElement("div");
+    row.className = "prob-row";
+    row.dataset.key = key;
+
+    const col1 = document.createElement("div");
+    const lab = document.createElement("div");
+    lab.className = "label";
+    lab.textContent = label;
+    const sel = document.createElement("select");
+    sel.innerHTML = `
+      <option value="det">Deterministic</option>
+      <option value="normal">Normal</option>
+      <option value="lognormal">Lognormal</option>
+      <option value="gamma">Gamma</option>
+      <option value="uniform">Uniform</option>
+    `;
+    sel.value = cfg.dist;
+    col1.appendChild(lab);
+    col1.appendChild(sel);
+
+    const col2 = document.createElement("div");
+    const lab2 = document.createElement("div");
+    lab2.className = "label";
+    lab2.textContent = "Mean (sec)";
+    const mean = document.createElement("input");
+    mean.type = "number";
+    mean.min = "0";
+    mean.step = "1";
+    mean.value = String(cfg.mean);
+    col2.appendChild(lab2);
+    col2.appendChild(mean);
+
+    const col3 = document.createElement("div");
+    const lab3 = document.createElement("div");
+    lab3.className = "label";
+    lab3.textContent = "Spread (sec)";
+    const spread = document.createElement("input");
+    spread.type = "number";
+    spread.min = "0";
+    spread.step = "1";
+    spread.value = String(cfg.spread);
+    col3.appendChild(lab3);
+    col3.appendChild(spread);
+
+    row.appendChild(col1);
+    row.appendChild(col2);
+    row.appendChild(col3);
+    target.appendChild(row);
+
+    function syncDisable(){
+      spread.disabled = (sel.value === "det");
+    }
+    syncDisable();
+
+    sel.addEventListener("change", ()=>{
+      probPresetBase = null;
+      cfg.dist = sel.value;
+      syncDisable();
+      saveProbConfig(probConfig);
+    if(typeof overall_bumpModelVersion === "function") overall_bumpModelVersion();
+    overall_bumpModelVersion();
+    });
+    mean.addEventListener("input", ()=>{
+      probPresetBase = null;
+      cfg.mean = +mean.value || 0;
+      saveProbConfig(probConfig);
+      if(typeof overall_bumpModelVersion === "function") overall_bumpModelVersion();
+    });
+    spread.addEventListener("input", ()=>{
+      probPresetBase = null;
+      cfg.spread = +spread.value || 0;
+      saveProbConfig(probConfig);
+      if(typeof overall_bumpModelVersion === "function") overall_bumpModelVersion();
+    });
+  }
+
+  function makeDefaultConfig(){
+    const base = getBaseMeans();
+    return {
+      t1:{dist:"normal", mean:Math.round(base.t1), spread:Math.round(base.t1*0.25)},
+      t2:{dist:"normal", mean:Math.round(base.t2), spread:Math.round(base.t2*0.25)},
+      t3:{dist:"normal", mean:Math.round(base.t3), spread:Math.round(base.t3Spread)},
+      t4:{dist:"normal", mean:Math.round(base.t4), spread:Math.round(base.t4*0.20)},
+      t5:{dist:"normal", mean:Math.round(base.t5), spread:Math.round(base.t5*0.20)},
+      t6:{dist:"normal", mean:Math.round(base.t6), spread:Math.round(base.t6Spread)},
+      tv:{dist:"normal", mean:Math.round(base.tv), spread:Math.round(base.tvSpread)}
+    };
+  }
+
+  let probConfig = loadProbConfig() || makeDefaultConfig();
+  let probPresetBase = null;
+  const probStepControls = $("probStepControls");
+  const probVulnControls = $("probVulnControls");
+  if(probStepControls && probVulnControls){
+    probStepControls.innerHTML = "";
+    probVulnControls.innerHTML = "";
+    probSteps.forEach(s=>buildProbRow(probStepControls, s.key, s.label, probConfig[s.key]));
+    buildProbRow(probVulnControls, probVuln.key, probVuln.label, probConfig[probVuln.key]);
+  }
+
+  function applyProbPreset(key){
+    if(key === "baseline"){
+      if(probPresetBase){
+        probConfig = deepClone(probPresetBase);
+      }
+      probPresetBase = deepClone(probConfig);
+    } else {
+      if(!probPresetBase) probPresetBase = deepClone(probConfig);
+      const c = deepClone(probPresetBase);
+      if(key === "ew"){
+        c.t3.mean *= 1.6; c.t3.spread *= 1.8;
+        c.t4.mean *= 1.15;
+      } else if(key === "ai"){
+        c.t1.mean *= 0.7; c.t1.spread *= 0.8;
+        c.t4.mean *= 0.75; c.t4.spread *= 0.85;
+      } else if(key === "fiber"){
+        c.t3.mean *= 0.9; c.t3.spread *= 0.4;
+      } else if(key === "weather"){
+        c.t1.mean *= 1.4; c.t1.spread *= 1.5;
+        c.t2.mean *= 1.25;
+      }
+      probConfig = c;
+    }
+    saveProbConfig(probConfig);
+    if(probStepControls && probVulnControls){
+      probStepControls.innerHTML = "";
+      probVulnControls.innerHTML = "";
+      probSteps.forEach(s=>buildProbRow(probStepControls, s.key, s.label, probConfig[s.key]));
+      buildProbRow(probVulnControls, probVuln.key, probVuln.label, probConfig[probVuln.key]);
+    }
+    overall_onModelChanged();
+  }
+
+  function syncProbFromSliders(){
+    const base = getBaseMeans();
+    probConfig.t1.mean = Math.round(base.t1);
+    probConfig.t2.mean = Math.round(base.t2);
+    probConfig.t3.mean = Math.round(base.t3);
+    probConfig.t3.spread = Math.round(base.t3Spread);
+    probConfig.t4.mean = Math.round(base.t4);
+    probConfig.t5.mean = Math.round(base.t5);
+    probConfig.t6.mean = Math.round(base.t6);
+    probConfig.t6.spread = Math.round(base.t6Spread);
+    probConfig.tv.mean = Math.round(base.tv);
+    probConfig.tv.spread = Math.round(base.tvSpread);
+    saveProbConfig(probConfig);
+    if(probStepControls && probVulnControls){
+      probStepControls.innerHTML = "";
+      probVulnControls.innerHTML = "";
+      probSteps.forEach(s=>buildProbRow(probStepControls, s.key, s.label, probConfig[s.key]));
+      buildProbRow(probVulnControls, probVuln.key, probVuln.label, probConfig[probVuln.key]);
+    }
+    overall_onModelChanged();
+  }
+
+  function sampleDist(cfg){
+    const m = +cfg.mean || 0;
+    const s = +cfg.spread || 0;
+    if(cfg.dist === "det") return Math.max(0,m);
+    if(cfg.dist === "normal"){
+      return Math.max(0, m + randn()*s);
+    }
+    if(cfg.dist === "uniform"){
+      const lo = Math.max(0, m - s);
+      const hi = m + s;
+      return lo + Math.random()*(hi-lo);
+    }
+    if(cfg.dist === "lognormal"){
+      if(m <= 0) return 0;
+      const sigma = Math.sqrt(Math.log(1 + (s*s)/(m*m)));
+      const mu = Math.log(m) - 0.5*sigma*sigma;
+      return Math.exp(mu + randn()*sigma);
+    }
+    if(cfg.dist === "gamma"){
+      if(s <= 0 || m <= 0) return Math.max(0,m);
+      const k = (m/s)*(m/s);
+      const theta = (s*s)/m;
+      const gammaSample = sampleGamma(k, theta);
+      return Math.max(0, gammaSample);
+    }
+    return Math.max(0,m);
+  }
+
+  function sampleGamma(k, theta){
+    if(k < 1){
+      const u = Math.random();
+      return sampleGamma(1 + k, theta) * Math.pow(u, 1/k);
+    }
+    const d = k - 1/3;
+    const c = 1/Math.sqrt(9*d);
+    while(true){
+      let x = randn();
+      let v = 1 + c*x;
+      if(v <= 0) continue;
+      v = v*v*v;
+      const u = Math.random();
+      if(u < 1 - 0.331*Math.pow(x,4)) return d*v*theta;
+      if(Math.log(u) < 0.5*x*x + d*(1 - v + Math.log(v))) return d*v*theta;
+    }
+  }
+
+  function runProbClosure(N){
+    const tkc = [];
+    const tv = [];
+    let hits = 0;
+    for(let i=0;i<N;i++){
+      const t1 = sampleDist(probConfig.t1);
+      const t2 = sampleDist(probConfig.t2);
+      const t3 = sampleDist(probConfig.t3);
+      const t4 = sampleDist(probConfig.t4);
+      const t5 = sampleDist(probConfig.t5);
+      const t6 = sampleDist(probConfig.t6);
+      const T = t1+t2+t3+t4+t5+t6;
+      const V = sampleDist(probConfig.tv);
+      tkc.push(T);
+      tv.push(V);
+      if(T <= V) hits++;
+    }
+    const p = hits/N;
+    const sorted = [...tkc].sort((a,b)=>a-b);
+    const p50 = percentile(sorted,0.5);
+    const p90 = percentile(sorted,0.9);
+    const meanT = tkc.reduce((a,b)=>a+b,0)/tkc.length;
+    const meanV = tv.reduce((a,b)=>a+b,0)/tv.length;
+
+    const probPSuccess = $("probPSuccess");
+    if(probPSuccess) probPSuccess.textContent = `${(p*100).toFixed(2)}%`;
+    const probMeta = $("probMeta");
+    if(probMeta) probMeta.textContent = `mean T_KC ${formatTime(meanT)} \u00b7 P50 ${formatTime(p50)} \u00b7 P90 ${formatTime(p90)} \u00b7 mean T_V ${formatTime(meanV)}`;
+
+    let {mn, mx} = minMax(tkc);
+    let pad = (mx - mn) * 0.05 || 1;
+    mn = Math.max(0, mn - pad);
+    mx = mx + pad;
+    const probHist = $("probHist");
+    if(probHist) drawHistogram(probHist, tkc, 40, mn, mx, (x)=>formatTime(x), null);
+    const probCdf = $("probCdf");
+    if(probCdf) drawCDFCompare(probCdf, tkc, tv);
+    if(overall_state.open && !overall_state.inRefresh && !overall_state.resizing && !overall_state.dragging) overall_refreshOverallResultsWindow();
+    return p;
+  }
+
+  function drawCDFCompare(canvas, a, b){
+    const c = canvas;
+    const r = c.getBoundingClientRect();
+    const dpr = Math.max(1,Math.min(2,window.devicePixelRatio||1));
+    c.width = Math.floor(r.width*dpr);
+    c.height = Math.floor(r.height*dpr);
+    const g = c.getContext("2d");
+    const w=c.width, h=c.height;
+    g.clearRect(0,0,w,h);
+
+    g.globalAlpha=0.18;
+    g.strokeStyle="rgba(255,255,255,.08)";
+    g.lineWidth=1*dpr;
+    const step=60*dpr;
+    for(let x=0;x<=w;x+=step){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke();}
+    for(let y=0;y<=h;y+=step){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}
+    g.globalAlpha=1;
+
+    const A=[...a].sort((x,y)=>x-y);
+    const B=[...b].sort((x,y)=>x-y);
+    const xMin = Math.min(A[0]||0, B[0]||0);
+    const xMax = Math.max(A[A.length-1]||1, B[B.length-1]||1);
+    const pad=16*dpr;
+
+    function plot(arr, color){
+      g.strokeStyle=color;
+      g.lineWidth=2*dpr;
+      g.beginPath();
+      arr.forEach((v,i)=>{
+        const x = pad + (v-xMin)/(xMax-xMin||1) * (w-2*pad);
+        const y = h-pad - (i/(arr.length-1||1)) * (h-2*pad);
+        if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
+      });
+      g.stroke();
+    }
+    plot(A,"rgba(90,169,255,.85)");
+    plot(B,"rgba(55,214,122,.85)");
+
+    const lx = pad;
+    const ly = pad;
+    g.font = `${12*dpr}px ${getComputedStyle(document.body).fontFamily}`;
+    g.textBaseline = "top";
+    g.strokeStyle = "rgba(90,169,255,.85)";
+    g.lineWidth = 2*dpr;
+    g.beginPath();
+    g.moveTo(lx, ly + 6*dpr);
+    g.lineTo(lx + 18*dpr, ly + 6*dpr);
+    g.stroke();
+    g.fillStyle = "rgba(90,169,255,.95)";
+    g.fillText("T_KC", lx + 24*dpr, ly);
+
+    g.strokeStyle = "rgba(55,214,122,.85)";
+    g.beginPath();
+    g.moveTo(lx, ly + 22*dpr);
+    g.lineTo(lx + 18*dpr, ly + 22*dpr);
+    g.stroke();
+    g.fillStyle = "rgba(55,214,122,.95)";
+    g.fillText("T_V", lx + 24*dpr, ly + 16*dpr);
+  }
+
+  function runSensitivity(){
+    const N = +$("probTrials").value || 10000;
+    const baseP = runProbClosure(Math.min(6000, N));
+    const results = [];
+    probSteps.forEach(s=>{
+      const saved = probConfig[s.key].mean;
+      probConfig[s.key].mean = saved*1.2;
+      const pPlus = runProbClosure(Math.min(6000, N));
+      probConfig[s.key].mean = saved*0.8;
+      const pMinus = runProbClosure(Math.min(6000, N));
+      probConfig[s.key].mean = saved;
+      const delta = Math.max(Math.abs(pPlus-baseP), Math.abs(pMinus-baseP));
+      results.push({key:s.key, label:s.label, base:baseP, plus:pPlus, minus:pMinus, delta});
+    });
+    results.sort((a,b)=>b.delta-a.delta);
+    overall_lastSensitivity = results.map(r=>({key: r.key, label: r.label, delta: r.delta}));
+    overall_lastSensVersion = overall_modelVersion;
+    const table = results.map((r,i)=>{
+      const hl = i<3 ? " style=\"background:rgba(90,169,255,.08);\"" : "";
+      return `<div${hl} class=\"kv\"><span>${r.label}</span><b>${(r.base*100).toFixed(1)}% / ${(r.plus*100).toFixed(1)}% / ${(r.minus*100).toFixed(1)}% / Δ ${(r.delta*100).toFixed(1)}%</b></div>`;
+    }).join("");
+    $("probSensTable").innerHTML = table || "—";
+    saveProbConfig(probConfig);
+  }
+
+  if($("probTrials")){
+    $("probTrials").addEventListener("input", ()=>{$("probTrialsVal").textContent = $("probTrials").value;});
+    $("probTrialsVal").textContent = $("probTrials").value;
+  }
+  if($("probPreset")){
+    $("probPreset").addEventListener("change", ()=>applyProbPreset($("probPreset").value));
+  }
+  if($("probSync")){
+    $("probSync").addEventListener("click", syncProbFromSliders);
+  }
+  if($("btnRunProb")){
+    $("btnRunProb").addEventListener("click", ()=>{
+      runProbClosure(+$("probTrials").value || 10000);
+      overall_bumpModelVersion();
+    });
+  }
+  if($("btnRunSens")){
+    $("btnRunSens").addEventListener("click", ()=>{
+      runSensitivity();
+      overall_bumpModelVersion();
+    });
+  }
+
+  // ===== Overall Results Window =====
+  let overall_modelVersion = 0;
+  let overall_lastSensVersion = -1;
+  let overall_lastSensitivity = [];
+  function overall_bumpModelVersion(){
+    overall_modelVersion++;
+    overall_lastSensitivity = [];
+    overall_lastSensVersion = -1;
+  }
+
+  function overall_onModelChanged(){
+    overall_bumpModelVersion();
+    if(overall_state && overall_state.open){
+      overall_refreshOverallResultsWindow(true);
+    }
+  }
+
+  const overall_PARAM_MAP = {
+    detection: {key:"t1", label:"Detection"},
+    classification: {key:"t2", label:"Classification"},
+    comms: {key:"t3", label:"Comms"},
+    tracking: {key:"t4", label:"Tracking"}
+  };
+  const overall_TECH_LIBRARY = [
+    {id:"ai_vision", label:"AI Vision", stage:"classification", delta:0.04},
+    {id:"mesh_comms", label:"Mesh/Link Hardening", stage:"comms", deltaMs:-15, jitter:-0.10},
+    {id:"tracking_fusion", label:"Tracking Fusion", stage:"tracking", delta:0.03},
+    {id:"detection_sensor", label:"Better ISR Sensor", stage:"detection", delta:0.03}
+  ];
+
+  let overall_z = 10050;
+  let overall_state = {
+    open:false,
+    inRefresh:false,
+    dragging:false,
+    resizing:false
+  };
+
+  function overall_buildWindow(){
+    if(document.getElementById("overall_overlay")) return;
+    const overlay = document.createElement("div");
+    overlay.id = "overall_overlay";
+    overlay.className = "overall_overlay";
+    const win = document.createElement("div");
+    win.id = "overall_window";
+    win.className = "overall_window";
+    const hdr = document.createElement("div");
+    hdr.id = "overall_windowHeader";
+    hdr.className = "overall_windowHeader";
+    const title = document.createElement("div");
+    title.className = "title";
+    title.innerHTML = "AI Assessment &rsaquo; Executive Summary <span class=\"ai-badge\">AI-Assisted | Human-in-the-Loop</span>";
+    const close = document.createElement("button");
+    close.id = "overall_closeBtn";
+    close.type = "button";
+    close.textContent = "X";
+    const body = document.createElement("div");
+    body.id = "overall_windowBody";
+    body.className = "overall_windowBody";
+    const resize = document.createElement("div");
+    resize.id = "overall_resizeHandle";
+    resize.className = "overall_resizeHandle";
+    hdr.appendChild(title);
+    hdr.appendChild(close);
+    win.appendChild(hdr);
+    win.appendChild(body);
+    win.appendChild(resize);
+    overlay.appendChild(win);
+    document.body.appendChild(overlay);
+
+    close.addEventListener("click", (e)=>{ e.stopPropagation(); overall_closeOverallResultsWindow(); });
+    overlay.addEventListener("click", (e)=>{
+      if(e.target === overlay && !overall_state.dragging && !overall_state.resizing){
+        overall_closeOverallResultsWindow();
+      }
+    });
+
+    hdr.addEventListener("pointerdown", (e)=>{
+      if(e.target === close) return;
+      const rect = win.getBoundingClientRect();
+      overall_state.dragging = {x:e.clientX, y:e.clientY, left:rect.left, top:rect.top};
+      win.setPointerCapture(e.pointerId);
+      document.body.style.userSelect = "none";
+    });
+    hdr.addEventListener("pointermove", (e)=>{
+      if(!overall_state.dragging) return;
+      const dx = e.clientX - overall_state.dragging.x;
+      const dy = e.clientY - overall_state.dragging.y;
+      const nw = win.offsetWidth;
+      const nh = win.offsetHeight;
+      let left = overall_state.dragging.left + dx;
+      let top = overall_state.dragging.top + dy;
+      left = Math.max(10, Math.min(window.innerWidth - nw - 10, left));
+      top = Math.max(10, Math.min(window.innerHeight - nh - 10, top));
+      win.style.left = `${left}px`;
+      win.style.top = `${top}px`;
+      win.style.transform = "none";
+    });
+    ["pointerup","pointercancel"].forEach(evt=>{
+      hdr.addEventListener(evt, ()=>{ overall_state.dragging = false; document.body.style.userSelect = ""; });
+    });
+
+    resize.addEventListener("pointerdown", (e)=>{
+      const rect = win.getBoundingClientRect();
+      overall_state.resizing = {x:e.clientX, y:e.clientY, w:rect.width, h:rect.height};
+      resize.setPointerCapture(e.pointerId);
+      document.body.style.userSelect = "none";
+    });
+    resize.addEventListener("pointermove", (e)=>{
+      if(!overall_state.resizing) return;
+      const dx = e.clientX - overall_state.resizing.x;
+      const dy = e.clientY - overall_state.resizing.y;
+      const w = Math.max(520, overall_state.resizing.w + dx);
+      const h = Math.max(360, overall_state.resizing.h + dy);
+      win.style.width = `${w}px`;
+      win.style.height = `${h}px`;
+    });
+    ["pointerup","pointercancel"].forEach(evt=>{
+      resize.addEventListener(evt, ()=>{ overall_state.resizing = false; document.body.style.userSelect = ""; });
+    });
+  }
+
+  function overall_openOverallResultsWindow(){
+    overall_buildWindow();
+    const overlay = document.getElementById("overall_overlay");
+    if(!overlay) return;
+    overall_z += 1;
+    overlay.style.zIndex = overall_z;
+    overlay.classList.add("show");
+    overall_state.open = true;
+    overall_refreshOverallResultsWindow(true);
+  }
+
+  function overall_closeOverallResultsWindow(){
+    const overlay = document.getElementById("overall_overlay");
+    if(!overlay) return;
+    overlay.classList.remove("show");
+    overall_state.open = false;
+  }
+
+  function overall_getParamsSnapshot(){
+    return {prob: deepClone(probConfig)};
+  }
+  function overall_applyParamsSnapshot(snap){
+    if(!snap || !snap.prob) return;
+    probConfig = deepClone(snap.prob);
+    probPresetBase = null;
+    saveProbConfig(probConfig);
+  }
+
+  function overall_getCurrentMetrics(){
+    const N = Math.max(1000, Math.min(6000, +$("probTrials").value || 10000));
+    const pClose = runProbClosure(N);
+    const se = Math.sqrt((pClose * (1 - pClose)) / N);
+    const ciLow = Math.max(0, pClose - 1.96 * se);
+    const ciHigh = Math.min(1, pClose + 1.96 * se);
+    const ciWidth = ciHigh - ciLow;
+    const confidenceScore = Math.round(Math.max(0, Math.min(100, (1 - (ciWidth / 0.15)) * 100)));
+    let confidenceLabel = "LOW";
+    if(ciWidth <= 0.03) confidenceLabel = "HIGH";
+    else if(ciWidth <= 0.07) confidenceLabel = "MEDIUM";
+    return {pClose, N, se, ciLow, ciHigh, ciWidth, confidenceLabel, confidenceScore};
+  }
+
+  function overall_getSensitivityRanked(){
+    if(!overall_lastSensitivity || overall_lastSensitivity.length === 0 || overall_lastSensVersion !== overall_modelVersion){
+      runSensitivity();
+    }
+    const mapLabel = (key)=>{
+      const k = overall_PARAM_MAP;
+      if(key === k.detection.key) return k.detection.label;
+      if(key === k.classification.key) return k.classification.label;
+      if(key === k.comms.key) return k.comms.label;
+      if(key === k.tracking.key) return k.tracking.label;
+      return key;
+    };
+    return (overall_lastSensitivity || []).map(s=>({
+      paramKey:s.key,
+      label:mapLabel(s.key),
+      stage:mapLabel(s.key),
+      impact:s.delta
+    }));
+  }
+
+  function overall_statusFor(p){
+    if(p < 0.4) return {label:"LOW", cls:"low"};
+    if(p <= 0.7) return {label:"MEDIUM", cls:"med"};
+    return {label:"HIGH", cls:"high"};
+  }
+
+  function overall_applyTech(id){
+    const tech = overall_TECH_LIBRARY.find(t=>t.id === id);
+    if(!tech) return;
+    if(tech.stage === "classification"){
+      probConfig.t2.mean = Math.max(1, probConfig.t2.mean * (1 - tech.delta));
+    } else if(tech.stage === "comms"){
+      probConfig.t3.mean = Math.max(0.01, probConfig.t3.mean + (tech.deltaMs/1000));
+      probConfig.t3.spread = Math.max(0.01, probConfig.t3.spread * (1 + tech.jitter));
+    } else if(tech.stage === "tracking"){
+      probConfig.t4.mean = Math.max(1, probConfig.t4.mean * (1 - tech.delta));
+    } else if(tech.stage === "detection"){
+      probConfig.t1.mean = Math.max(1, probConfig.t1.mean * (1 - tech.delta));
+    }
+  }
+
+  function overall_computeWhatIf(selected){
+    const snap = overall_getParamsSnapshot();
+    const series = [];
+    const base = overall_getCurrentMetrics().pClose;
+    series.push({label:"Baseline", p:base});
+    selected.forEach(id=>{
+      overall_applyTech(id);
+      const p = overall_getCurrentMetrics().pClose;
+      series.push({label: overall_TECH_LIBRARY.find(t=>t.id===id)?.label || id, p});
+    });
+    overall_applyParamsSnapshot(snap);
+    return series;
+  }
+
+  function overall_getPclose(){
+    return overall_getCurrentMetrics().pClose;
+  }
+
+  function overall_applyTechSelectionsToProbConfig(sel){
+    if(sel.ai){
+      probConfig.t2.mean = Math.max(1, probConfig.t2.mean * 0.85);
+    }
+    if(sel.mesh){
+      probConfig.t3.mean = Math.max(0.01, probConfig.t3.mean * 0.8);
+      probConfig.t3.spread = Math.max(0.01, probConfig.t3.spread * 0.8);
+    }
+    if(sel.track){
+      probConfig.t4.mean = Math.max(1, probConfig.t4.mean * 0.85);
+    }
+    if(sel.detect){
+      probConfig.t1.mean = Math.max(1, probConfig.t1.mean * 0.85);
+    }
+  }
+
+  function overall_readSelectionsFromUI(){
+    return {
+      ai: !!document.getElementById("overall_opt_ai")?.checked,
+      mesh: !!document.getElementById("overall_opt_mesh")?.checked,
+      track: !!document.getElementById("overall_opt_track")?.checked,
+      detect: !!document.getElementById("overall_opt_detect")?.checked
+    };
+  }
+
+  function overall_getSelectedTechLabel(){
+    const sel = overall_readSelectionsFromUI();
+    const labels = [];
+    if(sel.ai) labels.push("AI Vision");
+    if(sel.mesh) labels.push("Mesh Relay");
+    if(sel.track) labels.push("Tracking");
+    if(sel.detect) labels.push("Detection");
+    return labels.length ? labels.join(" + ") : "—";
+  }
+
+  function updateAIInsight(results){
+    const line = document.getElementById("aiInsightLine");
+    if(!line || !results) return;
+    const uncertainty = results.metrics?.ciWidth ?? 0;
+    const TH_LOW = 0.03;
+    const TH_MED = 0.07;
+    let confidence = "Low confidence";
+    if(uncertainty <= TH_LOW) confidence = "High confidence";
+    else if(uncertainty <= TH_MED) confidence = "Medium confidence";
+
+    let driver = "—";
+    if(results.ranked && results.ranked.length){
+      const top = results.ranked.reduce((best, cur)=>{
+        if(!best) return cur;
+        return Math.abs(cur.impact || 0) > Math.abs(best.impact || 0) ? cur : best;
+      }, null);
+      driver = top?.label || "—";
+    }
+    const reco = overall_getSelectedTechLabel();
+    line.textContent = `AI Insight: ${confidence} \u2022 Top driver: ${driver} \u2022 Recommendation: ${reco}`;
+  }
+
+  function overall_computePForSelection(sel){
+    const snap = overall_getParamsSnapshot();
+    const prevRefresh = overall_state.inRefresh;
+    overall_state.inRefresh = true;
+    try{
+      overall_applyTechSelectionsToProbConfig(sel);
+      const p = overall_getPclose();
+      overall_applyParamsSnapshot(snap);
+      return p;
+    } finally {
+      overall_state.inRefresh = prevRefresh;
+    }
+  }
+
+  function overall_computeResults(){
+    const metrics = overall_getCurrentMetrics();
+    const p = metrics.pClose || 0;
+    const status = overall_statusFor(p);
+    const ranked = overall_getSensitivityRanked();
+    const top = ranked[0]?.label || "—";
+    const second = ranked[1]?.label || "—";
+    const recos = overall_getTopRecommendations(ranked);
+    const primaryReco = recos[0]?.tech || "—";
+    const stages = ["DETECT","CLASSIFY","TRACK","DECIDE","ENGAGE"];
+    const stageMap = {
+      "Detection":"DETECT",
+      "Classification":"CLASSIFY",
+      "Tracking":"TRACK",
+      "Comms":"DECIDE"
+    };
+    const topStage = stageMap[top] || "DETECT";
+    const secondStage = stageMap[second] || "CLASSIFY";
+    const ciHalf = (metrics.ciWidth/2) * 100;
+    return {metrics, p, status, ranked, top, second, recos, primaryReco, stages, topStage, secondStage, ciHalf};
+  }
+
+  function overall_renderWhatIf(canvas, points){
+    if(!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if(!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.clientWidth || 420;
+    const cssH = canvas.clientHeight || 170;
+    canvas.width = Math.max(1, Math.round(cssW * dpr));
+    canvas.height = Math.max(1, Math.round(cssH * dpr));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if(!points || points.length === 0) return;
+    const styles = getComputedStyle(document.documentElement);
+    const accent = styles.getPropertyValue("--accent").trim() || "#5aa9ff";
+    const success = styles.getPropertyValue("--success").trim() || "#3bd671";
+    const textSecondary = styles.getPropertyValue("--text-secondary").trim() || "#9aa4b2";
+
+    const pad = 14 * dpr;
+    const labelSpace = 20 * dpr;
+    const chartW = canvas.width - pad * 2;
+    const chartH = canvas.height - pad * 2 - labelSpace;
+    const chartTop = pad;
+    const chartBottom = chartTop + chartH;
+    const maxP = Math.max(...points.map(p=>p.p), 0.01);
+    const step = chartW / points.length;
+    const barWidth = Math.min(step * 0.65, 90 * dpr);
+    const mono = (getComputedStyle(document.documentElement).getPropertyValue("--mono") || "ui-monospace").trim();
+
+    points.forEach((pt, i)=>{
+      const x = pad + (i * step) + (step - barWidth) / 2;
+      const barH = Math.max(2 * dpr, chartH * (pt.p / maxP));
+      let fill = accent;
+      if(pt.label === "Baseline") fill = textSecondary;
+      if(pt.label === "Combined") fill = success;
+      ctx.fillStyle = fill;
+      ctx.fillRect(x, chartBottom - barH, barWidth, barH);
+
+      ctx.fillStyle = textSecondary;
+      ctx.font = `${11 * dpr}px ${mono}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(pt.label, x + barWidth / 2, canvas.height - pad + 6 * dpr);
+    });
+  }
+
+  function overall_getTopRecommendations(ranked){
+    const top = ranked.slice(0,2);
+    return top.map((r)=>{
+      let techId = "detection_sensor";
+      if(r.paramKey === overall_PARAM_MAP.classification.key) techId = "ai_vision";
+      if(r.paramKey === overall_PARAM_MAP.comms.key) techId = "mesh_comms";
+      if(r.paramKey === overall_PARAM_MAP.tracking.key) techId = "tracking_fusion";
+      const tech = overall_TECH_LIBRARY.find(t=>t.id===techId);
+      const snap = overall_getParamsSnapshot();
+      const base = overall_getCurrentMetrics().pClose;
+      overall_applyTech(techId);
+      const after = overall_getCurrentMetrics().pClose;
+      overall_applyParamsSnapshot(snap);
+      const uplift = Math.max(0, Math.round((after - base) * 100));
+      return {tech: tech?.label || techId, stage:r.label, uplift};
+    });
+  }
+
+  function overall_renderPath(container, series){
+    if(!container) return;
+    container.innerHTML = series.map(s=>{
+      const pct = Math.round(s.p * 100);
+      return `
+        <div class="overall_pathRow">
+          <div>${s.label}</div>
+          <div class="overall_pathBar"><span style="width:${pct}%;"></span></div>
+          <div>${pct}%</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function overall_refreshOverallResultsWindow(force=false){
+    if(overall_state.inRefresh) return;
+    overall_state.inRefresh = true;
+    try {
+      if(force) overall_lastSensVersion = -1;
+      const body = document.getElementById("overall_windowBody");
+      if(!body) return;
+      const results = overall_computeResults();
+      const {metrics, p, status, ranked, top, second, recos, primaryReco, stages, topStage, secondStage, ciHalf} = results;
+
+      body.innerHTML = `
+        <div class="overall_result">
+          <div class="overall_sectionTitle">PROBABILITY OF SUCCESSFUL ENGAGEMENT</div>
+          <div class="big">${(p*100).toFixed(1)}% <span class="overall_status ${status.cls}">${status.label}</span></div>
+          <div class="overall_bar"><span style="width:${Math.round(p*100)}%;"></span></div>
+          <div class="sub">Model-estimated probability of completing the kill chain and engaging the target.</div>
+        </div>
+
+        <div class="overall_statementLine">Under current conditions, the model estimates a ${(p*100).toFixed(1)}% probability of successful engagement. The primary limiter is ${top}; the highest uplift comes from ${primaryReco}.</div>
+        <div id="aiInsightLine" class="ai-insight-line"></div>
+
+        <div class="overall_kpis">
+          <div class="overall_card"><div class="label">CONFIDENCE</div><div class="value">${metrics.confidenceLabel} (${metrics.confidenceScore})</div><div class="label">CI &plusmn;${ciHalf.toFixed(1)}%</div></div>
+          <div class="overall_card"><div class="label">MAIN LIMITER</div><div class="value">${top}</div></div>
+          <div class="overall_card"><div class="label">BEST LEVERAGE</div><div class="value">${primaryReco}</div></div>
+        </div>
+
+        <div class="overall_panel">
+          <div class="overall_sectionTitle">KILL-CHAIN RIBBON</div>
+          <div class="overall_ribbon">
+            ${stages.map(s=>{
+              let cls = "";
+              if(s === topStage) cls = "red";
+              else if(s === secondStage) cls = "amber";
+              return `<div class="overall_stage"><span class="overall_dot ${cls}"></span>${s}</div>`;
+            }).join('<span class="overall_sep">></span>')}
+          </div>
+          <div class="overall_card" style="margin-top:8px;">${top} dominates engagement uncertainty under current conditions.</div>
+        </div>
+
+        <div class="overall_panel">
+          <div class="overall_sectionTitle">RECOMMENDED IMPROVEMENTS (MODEL-BASED)</div>
+          <div class="overall_recos">
+            ${recos.length ? recos.slice(0,2).map((r,i)=>`${i+1}. ${r.tech} at ${r.stage}  +${r.uplift}%`).join("<br>") : "No recommendations available."}
+          </div>
+        </div>
+
+        <div class="overall_panel">
+          <div class="overall_sectionTitle">AI Scenario Explorer</div>
+          <div class="overall_whatifChartWrap">
+            <canvas id="overall_whatifChart" class="overall_whatifChart"></canvas>
+          </div>
+          <div class="overall_toggleRow">
+            <label><input id="overall_opt_ai" type="checkbox" /> AI Vision (Classification)</label>
+            <label><input id="overall_opt_mesh" type="checkbox" /> Mesh/Link Hardening (Comms)</label>
+            <label><input id="overall_opt_track" type="checkbox" /> Tracking Fusion (Tracking)</label>
+            <label><input id="overall_opt_detect" type="checkbox" /> Better ISR Sensor (Detection)</label>
+          </div>
+          <div class="overall_whatifMeta">
+            <div>Combined (selected tech): <b id="overall_combinedPct">—</b></div>
+            <div>Δ vs baseline: <b id="overall_combinedDelta">—</b></div>
+          </div>
+          <div class="overall_actions">
+            <button id="overall_runWhatIf" type="button">Run AI Scenario Explorer</button>
+            <button id="overall_resetWhatIf" type="button">Reset</button>
+          </div>
+        </div>
+      `;
+
+      const chart = document.getElementById("overall_whatifChart");
+      const combinedPctEl = document.getElementById("overall_combinedPct");
+      const combinedDeltaEl = document.getElementById("overall_combinedDelta");
+      const noneSel = {ai:false, mesh:false, track:false, detect:false};
+
+      function overall_updateCombinedWhatIf(){
+        const baselineP = overall_computePForSelection(noneSel);
+        const combinedSel = overall_readSelectionsFromUI();
+        const combinedP = overall_computePForSelection(combinedSel);
+        if(combinedPctEl) combinedPctEl.textContent = `${(combinedP * 100).toFixed(1)}%`;
+        if(combinedDeltaEl) combinedDeltaEl.textContent = `${((combinedP - baselineP) * 100).toFixed(1)}%`;
+        overall_renderWhatIf(chart, [
+          {label:"Baseline", p: baselineP},
+          {label:"Combined", p: combinedP}
+        ]);
+        const prevRefresh = overall_state.inRefresh;
+        overall_state.inRefresh = true;
+        const results = overall_computeResults();
+        overall_state.inRefresh = prevRefresh;
+        updateAIInsight(results);
+      }
+
+      ["overall_opt_ai","overall_opt_mesh","overall_opt_track","overall_opt_detect"].forEach(id=>{
+        document.getElementById(id)?.addEventListener("change", overall_updateCombinedWhatIf);
+      });
+
+      document.getElementById("overall_runWhatIf")?.addEventListener("click", ()=>{
+        const baselineP = overall_computePForSelection(noneSel);
+        const sel = overall_readSelectionsFromUI();
+        const points = [{label:"Baseline", p: baselineP}];
+        if(sel.ai){
+          points.push({label:"AI Vision", p: overall_computePForSelection({ai:true, mesh:false, track:false, detect:false})});
+        }
+        if(sel.mesh){
+          points.push({label:"Mesh Relay", p: overall_computePForSelection({ai:false, mesh:true, track:false, detect:false})});
+        }
+        if(sel.track){
+          points.push({label:"Tracking", p: overall_computePForSelection({ai:false, mesh:false, track:true, detect:false})});
+        }
+        if(sel.detect){
+          points.push({label:"Detection", p: overall_computePForSelection({ai:false, mesh:false, track:false, detect:true})});
+        }
+        const combinedP = overall_computePForSelection(sel);
+        points.push({label:"Combined", p: combinedP});
+        overall_renderWhatIf(chart, points);
+        if(combinedPctEl) combinedPctEl.textContent = `${(combinedP * 100).toFixed(1)}%`;
+        if(combinedDeltaEl) combinedDeltaEl.textContent = `${((combinedP - baselineP) * 100).toFixed(1)}%`;
+      });
+
+      document.getElementById("overall_resetWhatIf")?.addEventListener("click", ()=>{
+        const ids = ["overall_opt_ai","overall_opt_mesh","overall_opt_track","overall_opt_detect"];
+        ids.forEach(id=>{
+          const el = document.getElementById(id);
+          if(el) el.checked = false;
+        });
+        overall_updateCombinedWhatIf();
+      });
+
+      overall_updateCombinedWhatIf();
+
+      updateAIInsight(results);
+    } finally {
+      overall_state.inRefresh = false;
+    }
+  }
+
+  const overall_btnOpen = $("overall_btnOpen");
+  if(overall_btnOpen){
+    overall_btnOpen.addEventListener("click", overall_openOverallResultsWindow);
+  }
+  window.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape" && overall_state.open) overall_closeOverallResultsWindow();
+  });
+
+  // ===== Help System =====
+  const help_MENU = [
+    {id:"parameters", label:"Parameters", items:[
+      {id:"parameters_overview", label:"Overview of Parameters"},
+      {id:"parameters_detection_classification", label:"Detection & Classification"},
+      {id:"parameters_comms_latency", label:"Comms & Latency"},
+      {id:"parameters_tracking_handoff", label:"Tracking & Handoff"},
+      {id:"parameters_distributions", label:"Distributions"},
+      {id:"parameters_scenario_presets", label:"Scenario Presets"},
+      {id:"parameters_timeline_params", label:"Killchain Timeline parameters"}
+    ]},
+    {id:"metrics", label:"Metrics", items:[
+      {id:"metrics_overview", label:"Overview of Metrics"},
+      {id:"metrics_pclose", label:"P_close / Closure Probability"},
+      {id:"metrics_time_to_close", label:"Time-to-Close"},
+      {id:"metrics_cost_resource", label:"Cost / Resource proxies"},
+      {id:"metrics_uncertainty", label:"Confidence / Uncertainty"}
+    ]},
+    {id:"prob", label:"Probability & Closure", items:[
+      {id:"prob_overview", label:"What is Probabilistic Kill Chain Closure?"},
+      {id:"prob_how_computed", label:"How P_close is computed"},
+      {id:"prob_interpret", label:"Interpreting closure results"}
+    ]},
+    {id:"timeline", label:"Killchain Timeline", items:[
+      {id:"timeline_overview", label:"What the timeline represents"},
+      {id:"timeline_stage_gates", label:"Stage gates"},
+      {id:"timeline_latency_uncertainty", label:"Where latency and uncertainty appear"}
+    ]},
+    {id:"mc", label:"Monte Carlo", items:[
+      {id:"mc_why", label:"Why Monte Carlo is used"},
+      {id:"mc_interpret", label:"How to interpret sampling"},
+      {id:"mc_histograms", label:"Reading histograms"}
+    ]},
+    {id:"sens", label:"Sensitivity", items:[
+      {id:"sens_overview", label:"What Sensitivity analysis means"},
+      {id:"sens_multi_values", label:"Why multiple percentages appear"},
+      {id:"sens_prioritize", label:"How to prioritize improvements"}
+    ]},
+    {id:"hud", label:"Fire Mission HUD", items:[
+      {id:"hud_overview", label:"What Fire Mission HUD shows"},
+      {id:"hud_panels", label:"How to interpret panels"},
+      {id:"hud_workflow", label:"Typical workflow using HUD"}
+    ]},
+    {id:"scenarios", label:"Scenarios & Presets", items:[
+      {id:"scenarios_overview", label:"What scenarios do"},
+      {id:"scenarios_compare", label:"Recommended way to compare"}
+    ]},
+    {id:"charts", label:"Charts & Graphs", items:[
+      {id:"charts_reading", label:"Reading plots"},
+      {id:"charts_patterns", label:"Common patterns"}
+    ]},
+    {id:"faq", label:"FAQ / How to Use", items:[
+      {id:"faq_timeline", label:"I don't understand killchain timeline"},
+      {id:"faq_what_change", label:"What should I change first?"},
+      {id:"faq_uncertainty", label:"How do I read uncertainty?"},
+      {id:"faq_glossary", label:"Glossary"}
+    ]},
+    {id:"export", label:"Export / Reset", items:[
+      {id:"export_reset", label:"Resetting the model"}
+    ]}
+  ];
+
+  const help_CONTENT = {
+    parameters_overview:{
+      title:"Overview of Parameters",
+      breadcrumb:["Help","Parameters","Overview"],
+      summary:"Quick summary: Parameters define the timing, uncertainty, and friction in the kill-chain. Adjust them to see how TSS, FRE, survivability, and P_close respond.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Each slider and distribution shifts how fast the chain closes.</li><li>Small changes can cascade into large changes in P_close.</li></ul><h4>How to use it in this app</h4><ul><li>Use the Parameters tab sliders (Detection, PID, C2, Fire, BDA, EW, Human).</li><li>Use Prob Closure distributions to model uncertainty for each step.</li><li>Confirm effects in Metrics and Monte Carlo tabs.</li></ul>`,
+      related:["metrics_overview","prob_overview","timeline_overview"]
+    },
+    parameters_detection_classification:{
+      title:"Detection & Classification",
+      breadcrumb:["Help","Parameters","Detection & Classification"],
+      summary:"Quick summary: Detection latency and PID/Confirm shape the earliest gating of the kill-chain.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Long detection or PID delay pushes TSS up and reduces P_close.</li><li>Early delays amplify downstream uncertainty.</li></ul><h4>How to use it in this app</h4><ul><li>Adjust Detection Latency and PID/Confirmation sliders.</li><li>In Prob Closure, T1 and T2 map to these stages.</li><li>Watch the HUD for DETECTION and PID/CONFIRM updates.</li></ul>`,
+      related:["timeline_stage_gates","prob_how_computed","hud_overview"]
+    },
+    parameters_comms_latency:{
+      title:"Comms & Latency",
+      breadcrumb:["Help","Parameters","Comms & Latency"],
+      summary:"Quick summary: Comms delay and C2 latency often dominate closure when EW or human factors are high.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Higher EW increases routing delay and jitter.</li><li>C2 delays slow the handoff to the shooter.</li></ul><h4>How to use it in this app</h4><ul><li>Adjust C2 Routing/Decision and EW sliders.</li><li>Prob Closure T3 models comms, T4 models C2 decision.</li><li>Use Scenario Presets like EW Degraded Comms to test stress cases.</li></ul>`,
+      related:["parameters_scenario_presets","prob_overview","sens_prioritize"]
+    },
+    parameters_tracking_handoff:{
+      title:"Tracking & Handoff",
+      breadcrumb:["Help","Parameters","Tracking & Handoff"],
+      summary:"Quick summary: Tracking continuity appears as C2 and fire mission processing latency in this model.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Breaks in tracking cause re-queues and longer C2.</li><li>Longer weapon action windows can erode first-round effect.</li></ul><h4>How to use it in this app</h4><ul><li>Use C2 Routing/Decision and Weapon Action sliders as tracking proxies.</li><li>Review the Killchain Timeline for stage splits.</li></ul>`,
+      related:["timeline_overview","metrics_overview","hud_panels"]
+    },
+    parameters_distributions:{
+      title:"Distributions",
+      breadcrumb:["Help","Parameters","Distributions"],
+      summary:"Quick summary: Distribution choices model uncertainty in each step and drive Monte Carlo outcomes.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Normal or Lognormal increases tail risk.</li><li>Uniform spreads outcomes evenly.</li><li>Gamma captures skew in long delays.</li></ul><h4>How to use it in this app</h4><ul><li>In Prob Closure, set each step to Deterministic, Normal, Lognormal, Gamma, or Uniform.</li><li>Mean and Spread values control the distribution shape.</li><li>Use higher spread to simulate degraded sensing or comms.</li></ul><h4>Note</h4><ul><li>Triangular/Beta are not implemented in this build.</li></ul>`,
+      related:["mc_interpret","prob_how_computed","metrics_uncertainty"]
+    },
+    parameters_scenario_presets:{
+      title:"Scenario Presets",
+      breadcrumb:["Help","Parameters","Scenario Presets"],
+      summary:"Quick summary: Presets are quick multipliers for step means/spreads in Prob Closure.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Presets give you realistic starting points.</li><li>They let you compare degraded vs improved comms quickly.</li></ul><h4>How to use it in this app</h4><ul><li>Open the Prob Closure tab and select a preset.</li><li>Use Sync from current mission sliders to refresh baselines.</li></ul>`,
+      related:["scenarios_overview","prob_overview","parameters_comms_latency"]
+    },
+    parameters_timeline_params:{
+      title:"Killchain Timeline parameters",
+      breadcrumb:["Help","Parameters","Killchain Timeline parameters"],
+      summary:"Quick summary: Timeline bars reflect the current stage durations from the Parameters tab.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Timeline helps identify bottlenecks at a glance.</li></ul><h4>How to use it in this app</h4><ul><li>Adjust sliders and watch the timeline bar update.</li><li>Use this to explain where time is spent before running Monte Carlo.</li></ul>`,
+      related:["timeline_overview","metrics_overview","mc_why"]
+    },
+    metrics_overview:{
+      title:"Overview of Metrics",
+      breadcrumb:["Help","Metrics","Overview"],
+      summary:"Quick summary: Metrics summarize how effective the current kill-chain configuration is.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Metrics provide a fast read of performance.</li><li>They connect parameters to outcomes.</li></ul><h4>How to use it in this app</h4><ul><li>Metrics tab shows TSS, FRE, and Survivability.</li><li>P_close is in Prob Closure.</li></ul>`,
+      related:["metrics_pclose","metrics_uncertainty","prob_overview"]
+    },
+    metrics_pclose:{
+      title:"P_close / Closure Probability",
+      breadcrumb:["Help","Metrics","P_close"],
+      summary:"Quick summary: P_close is the probability the kill-chain closes before the target relocates.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It is the central success indicator in Prob Closure.</li></ul><h4>How to use it in this app</h4><ul><li>Run Prob Closure to compute P_close.</li><li>Compare P_close across scenarios or slider changes.</li></ul>`,
+      related:["prob_overview","prob_interpret","sens_prioritize"]
+    },
+    metrics_time_to_close:{
+      title:"Time-to-Close",
+      breadcrumb:["Help","Metrics","Time-to-Close"],
+      summary:"Quick summary: Time-to-close corresponds to TSS or T_KC depending on the view.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Long closure time reduces P_close.</li></ul><h4>How to use it in this app</h4><ul><li>TSS is shown in Metrics and pills.</li><li>Prob Closure shows the T_KC distribution and percentiles.</li></ul>`,
+      related:["timeline_overview","prob_how_computed","mc_histograms"]
+    },
+    metrics_cost_resource:{
+      title:"Cost / Resource proxies",
+      breadcrumb:["Help","Metrics","Cost / Resource proxies"],
+      summary:"Quick summary: This build does not include explicit cost modeling; use time and comms complexity as proxies.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Cost can be estimated by time, comms load, or EW resistance.</li></ul><h4>How to use it in this app</h4><ul><li>Use longer C2 and comms values as a proxy for higher cost.</li></ul>`,
+      related:["metrics_overview","parameters_comms_latency","scenarios_compare"]
+    },
+    metrics_uncertainty:{
+      title:"Confidence / Uncertainty",
+      breadcrumb:["Help","Metrics","Confidence / Uncertainty"],
+      summary:"Quick summary: Uncertainty appears as spread in distributions and variance in Monte Carlo outputs.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Uncertainty shows how reliable outcomes are.</li><li>Wide distributions can hide poor performance.</li></ul><h4>How to use it in this app</h4><ul><li>Use the Monte Carlo tab to see distribution spread.</li><li>Adjust spread values in Prob Closure to model uncertainty.</li></ul>`,
+      related:["mc_interpret","prob_how_computed","sens_multi_values"]
+    },
+    prob_overview:{
+      title:"What is Probabilistic Kill Chain Closure?",
+      breadcrumb:["Help","Probability & Closure","Overview"],
+      summary:"Quick summary: Prob Closure samples step durations to estimate the probability of closing before target relocation.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It quantifies success under uncertainty.</li><li>It is more realistic than a single deterministic time.</li></ul><h4>How to use it in this app</h4><ul><li>Open Prob Closure tab and run the model.</li><li>Use the T_KC distribution and CDF chart to compare against T_V.</li></ul>`,
+      related:["prob_how_computed","metrics_pclose","mc_why"]
+    },
+    prob_how_computed:{
+      title:"How P_close is computed",
+      breadcrumb:["Help","Probability & Closure","Computation"],
+      summary:"Quick summary: P_close = fraction of samples where T_KC is less than T_V.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It explains the logic behind the closure probability.</li></ul><h4>How to use it in this app</h4><ul><li>T_KC is the sum of step samples (T1..T6).</li><li>T_V is the vulnerability window sample.</li><li>The CDF chart shows relative timing between the two.</li></ul>`,
+      related:["prob_interpret","metrics_pclose","parameters_distributions"]
+    },
+    prob_interpret:{
+      title:"Interpreting closure results",
+      breadcrumb:["Help","Probability & Closure","Interpretation"],
+      summary:"Quick summary: High P_close means fast chain closure relative to target movement.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Use P_close to decide if the kill-chain is viable.</li></ul><h4>How to use it in this app</h4><ul><li>Compare P_close across presets and slider settings.</li><li>Use Sensitivity to decide which step to improve first.</li></ul>`,
+      related:["sens_prioritize","metrics_time_to_close","mc_interpret"]
+    },
+    timeline_overview:{
+      title:"What the timeline represents",
+      breadcrumb:["Help","Killchain Timeline","Overview"],
+      summary:"Quick summary: The timeline visualizes stage durations that sum to TSS.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It highlights which stages dominate the total time.</li></ul><h4>How to use it in this app</h4><ul><li>The bar segments correspond to detect, PID, C2, fire, and BDA.</li></ul>`,
+      related:["timeline_stage_gates","parameters_timeline_params","metrics_time_to_close"]
+    },
+    timeline_stage_gates:{
+      title:"Stage gates",
+      breadcrumb:["Help","Killchain Timeline","Stage gates"],
+      summary:"Quick summary: Each stage gate must complete before the next can begin.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Gates define dependencies and reveal chokepoints.</li></ul><h4>How to use it in this app</h4><ul><li>Watch the HUD sequence: DETECTION -> PID -> C2 -> FIRE -> BDA.</li></ul>`,
+      related:["hud_overview","timeline_latency_uncertainty","parameters_overview"]
+    },
+    timeline_latency_uncertainty:{
+      title:"Where latency and uncertainty appear",
+      breadcrumb:["Help","Killchain Timeline","Latency & uncertainty"],
+      summary:"Quick summary: Latency is visible in timeline length; uncertainty is visible in distributions and Monte Carlo spread.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Uncertainty can cause late-stage failure even with good averages.</li></ul><h4>How to use it in this app</h4><ul><li>Compare the deterministic timeline with Prob Closure outputs.</li></ul>`,
+      related:["metrics_uncertainty","mc_histograms","prob_overview"]
+    },
+    mc_why:{
+      title:"Why Monte Carlo is used",
+      breadcrumb:["Help","Monte Carlo","Why"],
+      summary:"Quick summary: Monte Carlo simulates many runs to reveal distribution of outcomes.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It shows variability instead of a single number.</li></ul><h4>How to use it in this app</h4><ul><li>Run Monte Carlo to see TSS and FRE distributions.</li><li>Use the output rates chart to understand hit vs survive.</li></ul>`,
+      related:["mc_histograms","metrics_uncertainty","sens_overview"]
+    },
+    mc_interpret:{
+      title:"How to interpret sampling",
+      breadcrumb:["Help","Monte Carlo","Interpretation"],
+      summary:"Quick summary: Focus on mean, spread, and tails rather than single values.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Outliers can dominate operational risk.</li></ul><h4>How to use it in this app</h4><ul><li>Compare mean values and note distribution width.</li></ul>`,
+      related:["mc_histograms","metrics_uncertainty","prob_overview"]
+    },
+    mc_histograms:{
+      title:"Reading histograms",
+      breadcrumb:["Help","Monte Carlo","Histograms"],
+      summary:"Quick summary: Histograms show how often outcomes fall into bins.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Peaks show typical outcomes; tails show risk.</li></ul><h4>How to use it in this app</h4><ul><li>Use TSS and FRE histograms to see how stable performance is.</li></ul>`,
+      related:["charts_reading","metrics_uncertainty","prob_interpret"]
+    },
+    sens_overview:{
+      title:"What Sensitivity analysis means",
+      breadcrumb:["Help","Sensitivity","Overview"],
+      summary:"Quick summary: Sensitivity shows how much each step can change P_close.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It tells you where to invest first.</li></ul><h4>How to use it in this app</h4><ul><li>Run Sensitivity in Prob Closure.</li><li>Compare deltas across steps.</li></ul>`,
+      related:["sens_prioritize","prob_how_computed","parameters_overview"]
+    },
+    sens_multi_values:{
+      title:"Why multiple percentages appear",
+      breadcrumb:["Help","Sensitivity","Multiple values"],
+      summary:"Quick summary: The table shows baseline, +20%, -20%, and max delta impact.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It shows asymmetry between improvement and degradation.</li></ul><h4>How to use it in this app</h4><ul><li>Use Max delta to rank steps by impact.</li></ul>`,
+      related:["sens_prioritize","prob_interpret","metrics_uncertainty"]
+    },
+    sens_prioritize:{
+      title:"How to prioritize improvements",
+      breadcrumb:["Help","Sensitivity","Prioritization"],
+      summary:"Quick summary: Focus on steps with the highest delta first.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Optimizing the wrong step wastes effort.</li></ul><h4>How to use it in this app</h4><ul><li>Pick the top 1-2 steps from Sensitivity and adjust their parameters.</li></ul>`,
+      related:["sens_overview","parameters_overview","metrics_pclose"]
+    },
+    hud_overview:{
+      title:"What Fire Mission HUD shows",
+      breadcrumb:["Help","Fire Mission HUD","Overview"],
+      summary:"Quick summary: The HUD reflects live stage status during simulation.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It mirrors the operational flow and status changes.</li></ul><h4>How to use it in this app</h4><ul><li>Run Mission to see stage transitions in the HUD.</li></ul>`,
+      related:["hud_panels","timeline_stage_gates","parameters_overview"]
+    },
+    hud_panels:{
+      title:"How to interpret panels",
+      breadcrumb:["Help","Fire Mission HUD","Panels"],
+      summary:"Quick summary: Each row corresponds to a stage with status and progress line.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It gives immediate feedback on stage completion.</li></ul><h4>How to use it in this app</h4><ul><li>Observe progress lines under each stage while time runs.</li></ul>`,
+      related:["hud_overview","timeline_overview","charts_reading"]
+    },
+    hud_workflow:{
+      title:"Typical workflow using HUD",
+      breadcrumb:["Help","Fire Mission HUD","Workflow"],
+      summary:"Quick summary: Use HUD as a sequence checklist from detection to BDA.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Ensures you interpret stage order correctly.</li></ul><h4>How to use it in this app</h4><ul><li>Start with Detection, confirm PID, then C2, Fire, and BDA.</li></ul>`,
+      related:["timeline_stage_gates","prob_overview","metrics_overview"]
+    },
+    scenarios_overview:{
+      title:"What scenarios do",
+      breadcrumb:["Help","Scenarios & Presets","Overview"],
+      summary:"Quick summary: Scenarios are predefined settings that change comms, detection, or decision timing.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>They represent real-world conditions (EW, AI, weather).</li></ul><h4>How to use it in this app</h4><ul><li>Select a preset in Prob Closure, then run the model.</li></ul>`,
+      related:["parameters_scenario_presets","prob_overview","scenarios_compare"]
+    },
+    scenarios_compare:{
+      title:"Recommended way to compare",
+      breadcrumb:["Help","Scenarios & Presets","Compare"],
+      summary:"Quick summary: Keep one baseline and vary a single preset to see deltas.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Controlled comparisons reduce confusion.</li></ul><h4>How to use it in this app</h4><ul><li>Run baseline, then apply one preset and rerun.</li></ul>`,
+      related:["mc_why","metrics_pclose","sens_prioritize"]
+    },
+    charts_reading:{
+      title:"Reading plots",
+      breadcrumb:["Help","Charts & Graphs","Reading plots"],
+      summary:"Quick summary: Charts summarize distributions and comparative timing.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Charts show variability and risk.</li></ul><h4>How to use it in this app</h4><ul><li>Use histograms for spread and CDF for relative timing.</li></ul>`,
+      related:["mc_histograms","prob_how_computed","metrics_uncertainty"]
+    },
+    charts_patterns:{
+      title:"Common patterns",
+      breadcrumb:["Help","Charts & Graphs","Patterns"],
+      summary:"Quick summary: Narrow peaks mean stable performance; wide curves mean uncertainty.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Patterns help you communicate risk quickly.</li></ul><h4>How to use it in this app</h4><ul><li>Compare peak width across scenarios to see robustness.</li></ul>`,
+      related:["mc_interpret","prob_interpret","metrics_uncertainty"]
+    },
+    faq_timeline:{
+      title:"I don't understand killchain timeline",
+      breadcrumb:["Help","FAQ / How to Use","Timeline"],
+      summary:"Quick summary: The timeline is a stacked bar of stage durations.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>It is a quick diagnostic for where time accumulates.</li></ul><h4>How to use it in this app</h4><ul><li>Adjust sliders and watch which segment grows.</li></ul>`,
+      related:["timeline_overview","parameters_timeline_params","metrics_time_to_close"]
+    },
+    faq_what_change:{
+      title:"What should I change first?",
+      breadcrumb:["Help","FAQ / How to Use","What to change"],
+      summary:"Quick summary: Use Sensitivity to identify the highest impact stage.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Improving low-impact steps wastes effort.</li></ul><h4>How to use it in this app</h4><ul><li>Run Sensitivity and focus on the top delta step.</li></ul>`,
+      related:["sens_prioritize","prob_overview","parameters_overview"]
+    },
+    faq_uncertainty:{
+      title:"How do I read uncertainty?",
+      breadcrumb:["Help","FAQ / How to Use","Uncertainty"],
+      summary:"Quick summary: Uncertainty is represented by spread in distributions and Monte Carlo variance.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Uncertainty can shift outcomes dramatically.</li></ul><h4>How to use it in this app</h4><ul><li>Increase spread values and observe how CDF and histograms widen.</li></ul>`,
+      related:["metrics_uncertainty","mc_histograms","prob_how_computed"]
+    },
+    faq_glossary:{
+      title:"Glossary",
+      breadcrumb:["Help","FAQ / How to Use","Glossary"],
+      summary:"Quick summary: Key terms used in this simulator.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Shared terminology improves understanding across teams.</li></ul><h4>Glossary</h4><ul><li>TSS: Total system time (kill-chain duration).</li><li>FRE: First-round effect probability.</li><li>P_close: Probability the chain closes before relocation.</li><li>T_KC: Kill-chain closure time.</li><li>T_V: Target vulnerability window.</li></ul>`,
+      related:["metrics_overview","prob_overview","timeline_overview"]
+    },
+    export_reset:{
+      title:"Resetting the model",
+      breadcrumb:["Help","Export / Reset","Reset"],
+      summary:"Quick summary: Reset restores default parameters and clears transient UI state.",
+      bodyHtml:`<h4>Why it matters</h4><ul><li>Reset is a clean baseline for comparisons.</li></ul><h4>How to use it in this app</h4><ul><li>Use the Reset button in Controls to restore defaults.</li></ul><h4>Note</h4><ul><li>This build does not include export or save-to-file.</li></ul>`,
+      related:["parameters_overview","scenarios_compare","mc_why"]
+    }
+  };
+
+  const help_btn = $("help_btn");
+  const help_wrap = $("help_wrap");
+  const help_dropdown = $("help_dropdown");
+  const help_overlay = $("help_overlay");
+  const help_window = $("help_window");
+  const help_windowHeader = $("help_windowHeader");
+  const help_closeBtn = $("help_closeBtn");
+  const help_resizeHandle = $("help_resizeHandle");
+  const help_topicList = $("help_topicList");
+  const help_search = $("help_search");
+  const help_title = $("help_title");
+  const help_summary = $("help_summary");
+  const help_article = $("help_article");
+  const help_breadcrumb = $("help_breadcrumb");
+  const help_related = $("help_related");
+
+  let help_lastFocus = null;
+  let help_drag = null;
+  let help_resize = null;
+
+  function help_buildDropdown(){
+    if(!help_dropdown) return;
+    help_dropdown.innerHTML = "";
+    help_MENU.forEach(cat=>{
+      const item = document.createElement("div");
+      item.className = "help_menu-item";
+      item.dataset.helpCat = cat.id;
+      item.textContent = cat.label;
+      const arrow = document.createElement("span");
+      arrow.className = "help_arrow";
+      arrow.textContent = ">";
+      item.appendChild(arrow);
+
+      const sub = document.createElement("div");
+      sub.className = "help_submenu";
+      cat.items.forEach(it=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "help_subitem";
+        btn.textContent = it.label;
+        btn.dataset.helpTopic = it.id;
+        btn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          help_openTopic(it.id);
+          help_closeDropdown();
+        });
+        sub.appendChild(btn);
+      });
+      item.appendChild(sub);
+      help_dropdown.appendChild(item);
+    });
+  }
+
+  function help_buildTopicList(filter){
+    if(!help_topicList) return;
+    help_topicList.innerHTML = "";
+    const q = (filter || "").toLowerCase();
+    let any = false;
+    help_MENU.forEach(cat=>{
+      const group = document.createElement("div");
+      group.className = "help_topicGroup";
+      const title = document.createElement("div");
+      title.className = "help_topicGroupTitle";
+      title.textContent = cat.label;
+      group.appendChild(title);
+      let count = 0;
+      cat.items.forEach(it=>{
+        const art = help_CONTENT[it.id];
+        const hay = (it.label + " " + (art?.summary || "") + " " + (art?.bodyHtml || "")).toLowerCase();
+        if(q && hay.indexOf(q) === -1) return;
+        const row = document.createElement("div");
+        row.className = "help_topic";
+        row.textContent = it.label;
+        row.dataset.helpTopic = it.id;
+        row.addEventListener("click", ()=>help_openTopic(it.id));
+        group.appendChild(row);
+        count++;
+      });
+      if(count > 0){
+        help_topicList.appendChild(group);
+        any = true;
+      }
+    });
+    if(!any){
+      const empty = document.createElement("div");
+      empty.className = "help_topic";
+      empty.textContent = "No topics found.";
+      help_topicList.appendChild(empty);
+    }
+  }
+  function help_openTopic(id){
+    const art = help_CONTENT[id];
+    if(!art) return;
+    help_title.textContent = art.title || "Help";
+    help_breadcrumb.textContent = (art.breadcrumb || []).join(" > ");
+    help_summary.textContent = art.summary || "";
+    help_article.innerHTML = art.bodyHtml || "";
+    if(art.related && art.related.length){
+      const links = art.related.map(r=>{
+        const t = help_CONTENT[r]?.title || r;
+        return `<a href="#" data-help-related="${r}">${t}</a>`;
+      }).join(" ");
+      help_related.innerHTML = `<div><b>Related topics</b></div><div>${links}</div>`;
+      help_related.querySelectorAll("a").forEach(a=>{
+        a.addEventListener("click", (e)=>{
+          e.preventDefault();
+          const tid = a.getAttribute("data-help-related");
+          help_openTopic(tid);
+        });
+      });
+    } else {
+      help_related.innerHTML = "";
+    }
+    help_openWindow();
+  }
+
+  function help_openWindow(){
+    if(!help_overlay) return;
+    help_overlay.classList.add("show");
+    help_overlay.setAttribute("aria-hidden","false");
+    help_lastFocus = document.activeElement;
+    if(help_window) help_window.focus();
+  }
+
+  function help_closeWindow(){
+    if(!help_overlay) return;
+    help_overlay.classList.remove("show");
+    help_overlay.setAttribute("aria-hidden","true");
+    if(help_lastFocus) help_lastFocus.focus();
+  }
+
+  function help_positionDropdown(){
+    if(!help_btn || !help_dropdown) return;
+    const r = help_btn.getBoundingClientRect();
+    const dd = help_dropdown.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = Math.min(r.left, vw - (dd.width || 260) - 10);
+    left = Math.max(10, left);
+    let top = Math.min(r.bottom + 6, vh - (dd.height || 200) - 10);
+    top = Math.max(10, top);
+    help_dropdown.style.left = `${left}px`;
+    help_dropdown.style.top = `${top}px`;
+  }
+
+  function help_toggleDropdown(){
+    if(!help_wrap) return;
+    const open = !help_wrap.classList.contains("open");
+    help_wrap.classList.toggle("open", open);
+    if(help_btn) help_btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if(help_dropdown){
+      help_dropdown.setAttribute("aria-hidden", open ? "false" : "true");
+      help_dropdown.style.display = open ? "block" : "none";
+    }
+    if(open) help_positionDropdown();
+  }
+  function help_closeDropdown(){
+    if(!help_wrap) return;
+    help_wrap.classList.remove("open");
+    if(help_btn) help_btn.setAttribute("aria-expanded", "false");
+    if(help_dropdown){
+      help_dropdown.setAttribute("aria-hidden", "true");
+      help_dropdown.style.display = "none";
+    }
+  }
+
+  if(help_btn){
+    help_btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      help_toggleDropdown();
+    });
+  }
+  document.addEventListener("click", (e)=>{
+    if(help_wrap && help_dropdown && !help_wrap.contains(e.target) && !help_dropdown.contains(e.target)) help_closeDropdown();
+  });
+  window.addEventListener("resize", ()=>{ if(help_wrap && help_wrap.classList.contains("open")) help_positionDropdown(); });
+
+  window.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape"){
+      if(help_wrap && help_wrap.classList.contains("open")) help_closeDropdown();
+      if(help_overlay && help_overlay.classList.contains("show")) help_closeWindow();
+    }
+  });
+
+  help_dropdown?.addEventListener("click", (e)=>{
+    e.stopPropagation();
+  });
+
+  help_overlay?.addEventListener("click", (e)=>{
+    if(e.target === help_overlay) help_closeWindow();
+  });
+  help_closeBtn?.addEventListener("click", (e)=>{
+    e.stopPropagation();
+    help_closeWindow();
+  });
+
+  help_windowHeader?.addEventListener("pointerdown", (e)=>{
+    if(!help_window) return;
+    if(e.target === help_closeBtn) return;
+    const rect = help_window.getBoundingClientRect();
+    help_drag = {x:e.clientX, y:e.clientY, left:rect.left, top:rect.top};
+    help_window.setPointerCapture(e.pointerId);
+  });
+  help_windowHeader?.addEventListener("pointermove", (e)=>{
+    if(!help_drag || !help_window) return;
+    const dx = e.clientX - help_drag.x;
+    const dy = e.clientY - help_drag.y;
+    help_window.style.left = `${help_drag.left + dx}px`;
+    help_window.style.top = `${help_drag.top + dy}px`;
+    help_window.style.transform = "none";
+  });
+  ["pointerup","pointercancel"].forEach(evt=>{
+    help_windowHeader?.addEventListener(evt, ()=>{ help_drag = null; });
+  });
+
+  help_resizeHandle?.addEventListener("pointerdown", (e)=>{
+    if(!help_window) return;
+    const rect = help_window.getBoundingClientRect();
+    help_resize = {x:e.clientX, y:e.clientY, w:rect.width, h:rect.height};
+    help_resizeHandle.setPointerCapture(e.pointerId);
+  });
+  help_resizeHandle?.addEventListener("pointermove", (e)=>{
+    if(!help_resize || !help_window) return;
+    const dx = e.clientX - help_resize.x;
+    const dy = e.clientY - help_resize.y;
+    const w = Math.max(520, help_resize.w + dx);
+    const h = Math.max(360, help_resize.h + dy);
+    help_window.style.width = `${w}px`;
+    help_window.style.height = `${h}px`;
+  });
+  ["pointerup","pointercancel"].forEach(evt=>{
+    help_resizeHandle?.addEventListener(evt, ()=>{ help_resize = null; });
+  });
+
+  window.addEventListener("pointerup", ()=>{ help_drag = null; help_resize = null; });
+  window.addEventListener("pointercancel", ()=>{ help_drag = null; help_resize = null; });
+
+  help_search?.addEventListener("input", ()=>{
+    help_buildTopicList(help_search.value);
+  });
+
+  help_buildDropdown();
+  help_buildTopicList("");
+  if(help_dropdown && help_dropdown.parentNode !== document.body){
+    document.body.appendChild(help_dropdown);
+  }
+  help_positionDropdown();
+
+  const help_hasHover = window.matchMedia && window.matchMedia("(hover: hover)").matches;
+  if(!help_hasHover){
+    help_dropdown?.querySelectorAll(".help_menu-item").forEach(item=>{
+      item.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        item.classList.toggle("open");
+      });
+    });
+  }
+
+  // ===== AI Analysis (client-side; key is exposed) =====
+  const aiMessages = $("aiMessages");
+  const aiPrompt = $("aiPrompt");
+  const btnAiSend = $("btnAiSend");
+
+  async function aiSend(){
+    if(!aiPrompt || !aiMessages) return;
+    const text = aiPrompt.value.trim();
+    if(!text) return;
+    if(GEMINI_API_KEY === "PASTE_YOUR_GEMINI_KEY_HERE"){
+      aiMessages.textContent = "Add your API key in GEMINI_API_KEY to use AI Analysis.";
+      return;
+    }
+    aiMessages.textContent = "Thinking...";
+    const {p} = updateComputed();
+    const prompt = `You are an expert military and technology analyst.\nAlways respond in a structured, concise, and professional tone.\nUse headings and bullet points always.\nEach heading and each bullet point must start on a new line.\nAvoid casual language.\nIf assumptions are made, state them explicitly.\nWrite ~2000 words.\n\nPrompt: ${text}\n\nMode: ${p.mode}\nTSS: ${p.tss.toFixed(1)}s\nT_detect: ${p.tDetect.toFixed(1)}s\nT_pid: ${p.tPid.toFixed(1)}s\nT_c2: ${p.tC2.toFixed(1)}s\nT_fire: ${p.tFire.toFixed(1)}s\nT_bda: ${p.tBda.toFixed(1)}s\nEW: ${p.ew}\nHuman: ${p.human}`;
+    const payload = {
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.5,
+        maxOutputTokens: 4000,
+        topP: 0.9
+      }
+    };
+    try{
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok){
+        const errText = await res.text();
+        aiMessages.textContent = `Error: ${res.status} ${errText}`;
+        return;
+      }
+      const data = await res.json();
+      const msg = data.candidates?.[0]?.content?.parts?.map(p=>p.text).join("") || "No response.";
+      aiMessages.textContent = msg;
+    } catch(e){
+      aiMessages.textContent = `Request failed: ${e.message}`;
+    }
+  }
+
+  if(btnAiSend){
+    btnAiSend.addEventListener("click", aiSend);
+  }
+
+  // ===== Init (IMPORTANT: delay first resize) =====
+  function init(){
+    $("audioPill").textContent = audioOn ? "ON" : "OFF";
+    $("btnMute").textContent = audioOn ? "Mute" : "Unmute";
+
+    syncTimeScale();
+    syncVals();
+    applyModePreset();
+
+    // Delay sizing until after layout has a real size
+    requestAnimationFrame(() => {
+      resize();
+      draw();
+      updateComputed();
+      mcClear();
+      reset();
+    });
+
+    if(audioOn){
+      ensureAudio();
+      startDroneBuzz($("mode").value==="fpv" ? "loiter" : "isr");
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
+
+
+
+
+
+
